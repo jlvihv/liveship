@@ -165,7 +165,9 @@ mod history {
     use super::*;
 
     pub fn router() -> Router {
-        Router::new().route("/", get(get_all).delete(delete))
+        Router::new()
+            .route("/", get(get_all).delete(delete))
+            .route("/open", post(open))
     }
 
     pub async fn get_all() -> Json<ApiResponse> {
@@ -187,6 +189,12 @@ mod history {
         info!("delete_history: {}, {}", url, start_time);
 
         api_response!(manager::history::delete(url, start_time))
+    }
+
+    /// 在文件管理器中打开
+    pub async fn open(Json(req): Json<JsonValue>) -> Json<ApiResponse> {
+        let path = extract_string!(req, "path");
+        api_response!(manager::history::open(path))
     }
 }
 

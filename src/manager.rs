@@ -217,6 +217,8 @@ pub mod plan {
 }
 
 pub mod history {
+    use crate::explorer;
+
     use super::*;
 
     /// 获取所有录制历史
@@ -240,6 +242,12 @@ pub mod history {
     /// 删除一条历史记录
     pub async fn delete(url: &str, start_time: i64) -> Result<JsonValue> {
         kv::history::delete(url, start_time)?;
+        Ok(JsonValue::Null)
+    }
+
+    /// 在文件管理器中打开文件夹
+    pub async fn open(path: &str) -> Result<JsonValue> {
+        explorer::show_item_in_folder(path).map_err(|e| anyhow::anyhow!(e))?;
         Ok(JsonValue::Null)
     }
 }

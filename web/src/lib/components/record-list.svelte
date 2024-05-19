@@ -7,7 +7,11 @@
 	import relativeTime from 'dayjs/plugin/relativeTime';
 	import 'dayjs/locale/zh-cn';
 	import Dialog from './dialog.svelte';
-	import { deleteRecordingHistory, getAllRecordingHistory } from '$lib/api/history';
+	import {
+		deleteRecordingHistory,
+		getAllRecordingHistory,
+		openFolderInFileManager
+	} from '$lib/api/history';
 	import { stopRecord } from '$lib/api/record';
 	import { formatFileSize } from '$lib/utils';
 	dayjs.extend(relativeTime);
@@ -72,6 +76,18 @@
 		}
 	}
 
+	// 在文件管理器中打开文件夹
+	async function openFolder(path: string) {
+		let resp: ApiResponse = await openFolderInFileManager(path);
+		if (resp.code == 0) {
+			toast.success('已经在文件管理器中打开了');
+		} else {
+			toast.error('打开文件夹失败', {
+				description: resp.message
+			});
+		}
+	}
+
 	function closeDialog() {
 		dialogUrl = '';
 		let dialog = document.getElementById('dialog') as HTMLDialogElement;
@@ -101,7 +117,7 @@
 
 {#if list.length > 0}
 	<div class="overflow-x-auto">
-		<table class="table-zebra table">
+		<table class="table table-zebra">
 			<thead>
 				<tr>
 					<th>录制状态</th>
@@ -141,9 +157,13 @@
 						<td class="min-w-24">{formatFileSize(row.fileSize)}</td>
 						<td>
 							{#if !row.deleted}
-								<span class="cursor-pointer">
+								<button
+									onclick={() => openFolder(row.path)}
+									class="tooltip"
+									data-tip="点击以在文件管理器中打开"
+								>
 									{row.path}
-								</span>
+								</button>
 							{:else}
 								<span class="text-gray-300 dark:text-gray-600"> 文件已删除 </span>
 							{/if}

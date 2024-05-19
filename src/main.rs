@@ -8,6 +8,7 @@ mod platform;
 mod recorder;
 mod request;
 mod utils;
+mod explorer;
 
 #[tokio::main]
 async fn main() {
