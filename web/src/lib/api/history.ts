@@ -21,3 +21,17 @@ export async function deleteRecordingHistory(url: string, startTime: number) {
 	const data = await response.json();
 	return data;
 }
+
+// 在文件管理器中打开文件夹
+export async function openFolderInFileManager(path: string) {
+	// post /api/history/open
+	const response = await fetch(`${API_URL}/history/open`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		body: JSON.stringify({ path })
+	});
+	const data = await response.json();
+	return data;
+}
