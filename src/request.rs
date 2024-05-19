@@ -18,3 +18,10 @@ pub async fn get_with_headers(url: &str, headers: HeaderMap) -> Result<Response>
     let resp = req.send().await?;
     Ok(resp)
 }
+
+pub async fn new_client_get_with_headers(url: &str, headers: HeaderMap) -> Result<Response> {
+    let client = reqwest::Client::new();
+    let req = client.get(url).headers(headers);
+    let resp = req.send().await?;
+    Ok(resp)
+}

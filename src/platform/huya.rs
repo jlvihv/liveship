@@ -1,19 +1,22 @@
-use anyhow::{Ok, Result};
+use crate::{
+    model::{LiveInfo, PlatformKind},
+    recorder::Recorder,
+    request,
+};
+use anyhow::{anyhow, Ok, Result};
 use axum::{
     async_trait,
     http::{HeaderMap, HeaderValue},
 };
 use base64::prelude::*;
 
-use rand::Rng;
-
-use crate::{
-    model::{LiveInfo, PlatformKind},
-    recorder::Recorder,
-    request,
-};
-
 pub struct Huya;
+
+impl Huya {
+    pub fn new() -> Self {
+        Self
+    }
+}
 
 #[async_trait]
 impl Recorder for Huya {
@@ -22,85 +25,85 @@ impl Recorder for Huya {
     }
 
     async fn get_live_info(&self, url: &str) -> Result<LiveInfo> {
-        let body = request::get_with_headers(url, Self::headers()?)
+        let body = request::new_client_get_with_headers(url, Self::headers()?)
             .await?
             .text()
             .await?;
-        // json_str = re.findall('stream: (\{"data".*?),"iWebDefaultBitRate"', html_str)[0]
-        // json_data = json.loads(json_str + '}')
+        println!("body: {:#?}", body);
         let re = regex::Regex::new(r#"stream: (\{"data".*?),"iWebDefaultBitRate""#)?;
         let json_str = re
             .captures(&body)
-            .ok_or_else(|| anyhow::anyhow!("stream not found"))?
+            .ok_or_else(|| anyhow!("stream not found"))?
             .get(1)
-            .ok_or_else(|| anyhow::anyhow!("stream not found"))?
+            .ok_or_else(|| anyhow!("stream not found"))?
             .as_str();
         let json_data: serde_json::Value = serde_json::from_str(&format!("{json_str}{}", "}"))?;
-        println!("json_data: {:#?}", json_data);
+        // println!("json_data: {:#?}", json_data);
         let game_live_info = json_data
             .pointer("/data/0/gameLiveInfo")
-            .ok_or_else(|| anyhow::anyhow!("gameLiveInfo not found"))?
+            .ok_or_else(|| anyhow!("gameLiveInfo not found"))?
             .as_object()
-            .ok_or_else(|| anyhow::anyhow!("gameLiveInfo is not Object"))?;
+            .ok_or_else(|| anyhow!("gameLiveInfo is not Object"))?;
         let game_stream_info_list = json_data
             .pointer("/data/0/gameStreamInfoList")
-            .ok_or_else(|| anyhow::anyhow!("gameStreamInfoList not found"))?
+            .ok_or_else(|| anyhow!("gameStreamInfoList not found"))?
             .as_array()
-            .ok_or_else(|| anyhow::anyhow!("gameStreamInfoList is not Array"))?;
-        let _anchor_name = game_live_info
+            .ok_or_else(|| anyhow!("gameStreamInfoList is not Array"))?;
+        let anchor_name = game_live_info
             .get("nick")
-            .ok_or_else(|| anyhow::anyhow!("nick not found"))?
+            .ok_or_else(|| anyhow!("nick not found"))?
             .as_str()
-            .ok_or_else(|| anyhow::anyhow!("nick is not String"))?;
+            .ok_or_else(|| anyhow!("nick is not String"))?;
         let select_cdn = game_stream_info_list
             .get(0)
-            .ok_or_else(|| anyhow::anyhow!("gameStreamInfoList is empty"))?;
+            .ok_or_else(|| anyhow!("gameStreamInfoList is empty"))?;
         let flv_url = select_cdn
             .get("sFlvUrl")
-            .ok_or_else(|| anyhow::anyhow!("sFlvUrl not found"))?
+            .ok_or_else(|| anyhow!("sFlvUrl not found"))?
             .as_str()
-            .ok_or_else(|| anyhow::anyhow!("sFlvUrl is not String"))?;
+            .ok_or_else(|| anyhow!("sFlvUrl is not String"))?;
         let stream_name = select_cdn
             .get("sStreamName")
-            .ok_or_else(|| anyhow::anyhow!("sStreamName not found"))?
+            .ok_or_else(|| anyhow!("sStreamName not found"))?
             .as_str()
-            .ok_or_else(|| anyhow::anyhow!("sStreamName is not String"))?;
+            .ok_or_else(|| anyhow!("sStreamName is not String"))?;
         let flv_url_suffix = select_cdn
             .get("sFlvUrlSuffix")
-            .ok_or_else(|| anyhow::anyhow!("sFlvUrlSuffix not found"))?
+            .ok_or_else(|| anyhow!("sFlvUrlShttps://www.huya.com/859042uffix not found"))?
             .as_str()
-            .ok_or_else(|| anyhow::anyhow!("sFlvUrlSuffix is not String"))?;
+            .ok_or_else(|| anyhow!("sFlvUrlSuffix is not String"))?;
         let hls_url = select_cdn
             .get("sHlsUrl")
-            .ok_or_else(|| anyhow::anyhow!("sHlsUrl not found"))?
+            .ok_or_else(|| anyhow!("sHlsUrl not found"))?
             .as_str()
-            .ok_or_else(|| anyhow::anyhow!("sHlsUrl is not String"))?;
+            .ok_or_else(|| anyhow!("sHlsUrl is not String"))?;
         let hls_url_suffix = select_cdn
             .get("sHlsUrlSuffix")
-            .ok_or_else(|| anyhow::anyhow!("sHlsUrlSuffix not found"))?
+            .ok_or_else(|| anyhow!("sHlsUrlSuffix not found"))?
             .as_str()
-            .ok_or_else(|| anyhow::anyhow!("sHlsUrlSuffix is not String"))?;
+            .ok_or_else(|| anyhow!("sHlsUrlSuffix is not String"))?;
         let flv_anti_code = select_cdn
             .get("sFlvAntiCode")
-            .ok_or_else(|| anyhow::anyhow!("sFlvAntiCode not found"))?
+            .ok_or_else(|| anyhow!("sFlvAntiCode not found"))?
             .as_str()
-            .ok_or_else(|| anyhow::anyhow!("sFlvAntiCode is not String"))?;
+            .ok_or_else(|| anyhow!("sFlvAntiCode is not String"))?;
         let _hls_anti_code = select_cdn
             .get("sHlsAntiCode")
-            .ok_or_else(|| anyhow::anyhow!("sHlsAntiCode not found"))?
+            .ok_or_else(|| anyhow!("sHlsAntiCode not found"))?
             .as_str()
-            .ok_or_else(|| anyhow::anyhow!("sHlsAntiCode is not String"))?;
+            .ok_or_else(|| anyhow!("sHlsAntiCode is not String"))?;
+        println!("flv_anti_code: {:#?}", flv_anti_code);
         let new_anti_code = Self::get_anti_code(flv_anti_code, stream_name)?;
-        let _flv_url = format!(
+        let flv_url = format!(
             "{}/{}.{}?{}&ratio=",
             flv_url, stream_name, flv_url_suffix, new_anti_code
         );
-        let _m3u8_url = format!(
+        let m3u8_url = format!(
             "{}/{}.{}?{}&ratio=",
             hls_url, stream_name, hls_url_suffix, new_anti_code
         );
         let quality_list = flv_anti_code.split("&exsphd=").collect::<Vec<&str>>();
-        println!("quality_list: {:#?}", quality_list);
+        // println!("quality_list: {:#?}", quality_list);
         if quality_list.len() > 1 {
             // let quality_list = quality_list[1].split(",").collect::<Vec<&str>>();
             // let quality_list = quality_list
@@ -109,8 +112,28 @@ impl Recorder for Huya {
             //     .collect::<Vec<Vec<&str>>>();
             // let quality_list = quality_list.iter().map(|x| x[1]).collect::<Vec<&str>>();
         }
-
-        todo!()
+        let mut streams = vec![];
+        streams.push(crate::model::Stream {
+            url: flv_url,
+            resolution: "default".into(),
+            protocol: crate::model::StreamingProtocol::Flv,
+        });
+        streams.push(crate::model::Stream {
+            url: m3u8_url,
+            resolution: "default".into(),
+            protocol: crate::model::StreamingProtocol::Hls,
+        });
+        let info = LiveInfo {
+            url: url.into(),
+            anchor_name: anchor_name.into(),
+            anchor_avatar: "".to_string(),
+            title: "".to_string(),
+            status: crate::model::LiveStatus::Live,
+            viewer_count: "".to_string(),
+            room_cover: "".to_string(),
+            streams,
+        };
+        Ok(info)
     }
 }
 
@@ -132,38 +155,65 @@ impl Huya {
         Ok(headers)
     }
 
+    // 获取反盗链码
     fn get_anti_code(old_anti_code: &str, stream_name: &str) -> Result<String> {
-        // js 地址：https://hd.huya.com/cdn_libs/mobile/hysdk-m-202402211431.js
+        // 这个 js 中包含了反盗链的相关逻辑，可以参考 https://hd.huya.com/cdn_libs/mobile/hysdk-m-202402211431.js
         let params_t = 100;
         let sdk_version: i64 = 2403051612;
-        // sdk_id 是 13 位数毫秒级时间戳
+        // sdk_sid 是毫秒时间戳
         let sdk_sid = chrono::Utc::now().timestamp_millis();
 
         // 计算 uuid 和 uid 参数值
-        let mut rng = rand::thread_rng();
-        let init_uuid: i64 = rng.gen_range(0..4294967295); // 直接初始化
-        let uid = rng.gen_range(1400000000000..1400009999999); // 经过测试 uid 也可以使用 init_uuid 代替
+        // let mut rng = rand::thread_rng();
+        // let init_uuid: i64 = rng.gen_range(0..4294967295); // 直接初始化
+
+        // init_uuid 的计算方法：
+        // 1. 取时间戳后 10 位
+        // 2. 将其放大 1000 倍
+        // 3. 加上一个随机数 (0..1000)
+        // 4. 对 4294967295 取余，确保在 32 位整数范围内
+        let init_uuid = sdk_sid % 4294967295;
+        // let uid = rng.gen_range(1400000000000..1400009999999); // 经过测试 uid 也可以使用 init_uuid 代替
+        let uid = init_uuid;
         let seq_id = uid + sdk_sid; // 移动端请求的直播流地址中包含 seqId 参数
 
         // 计算 ws_time 参数值 (16 进制) 可以是当前毫秒时间戳，当然也可以直接使用 url_query['wsTime'][0]
         // 原始最大误差不得慢 240000 毫秒
-        let target_unix_time = (sdk_sid + 110624) / 1000;
-        let ws_time = format!("{:x}", target_unix_time);
+        // let target_unix_time = (sdk_sid + 110624) / 1000;
+        // let ws_time = format!("{:x}", target_unix_time);
+
+        // 使用 & 分割字符串，得到参数列表
+        let params = old_anti_code.split('&').collect::<Vec<&str>>();
+
+        // ws_time 取 wsTime 参数值
+        let ws_time = params
+            .iter()
+            .find(|&&x| x.starts_with("wsTime="))
+            .ok_or_else(|| anyhow!("wsTime not found"))?
+            .replace("wsTime=", "");
 
         // fm 参数值是经过 url 编码然后 base64 编码得到的，解码结果类似 DWq8BcJ3h6DJt6TY_$0_$1_$2_$3
-        // 先以 & 分割字符串，找到 fm= 后的字符串，然后进行 url 解码，再进行 base64 解码
-        let vecs = old_anti_code.split('&').collect::<Vec<&str>>();
-        let fm = vecs
+        // 先进行 url 解码，再进行 base64 解码
+        let fm = params
             .iter()
             .find(|&&x| x.starts_with("fm="))
-            .ok_or_else(|| anyhow::anyhow!("fm not found"))?
+            .ok_or_else(|| anyhow!("fm not found"))?
             .replace("fm=", "");
         let fm = urlencoding::decode(&fm)?.to_string();
         let fm = String::from_utf8(BASE64_STANDARD.decode(fm.as_bytes())?)?;
-        let ctype = vecs
+        // 第一个下划线之前的部分
+        let fm: String = fm
+            .split('_')
+            .collect::<Vec<&str>>()
+            .get(0)
+            .map(|&x| x.into())
+            .unwrap_or_default();
+        println!("fm: {:#?}", fm);
+
+        let ctype = params
             .iter()
             .find(|&&x| x.starts_with("ctype="))
-            .ok_or_else(|| anyhow::anyhow!("ctype not found"))?
+            .ok_or_else(|| anyhow!("ctype not found"))?
             .replace("ctype=", "");
         let ws_secret_hash = format!("{}|{}|{}", seq_id, ctype, params_t);
         // md5 加密
@@ -173,10 +223,10 @@ impl Huya {
             fm, uid, stream_name, ws_secret_hash, ws_time
         );
         let ws_secret_md5 = format!("{:x}", md5::compute(ws_secret));
-        let fs = vecs
+        let fs = params
             .iter()
             .find(|&&x| x.starts_with("fs="))
-            .ok_or_else(|| anyhow::anyhow!("fs not found"))?
+            .ok_or_else(|| anyhow!("fs not found"))?
             .replace("fs=", "");
         let anti_code = format!("wsSecret={ws_secret_md5}&wsTime={ws_time}&seqid={seq_id}&ctype={ctype}&ver=1&fs={fs}&uuid={init_uuid}&u={uid}&t={params_t}&sv={sdk_version}&sdk_sid={sdk_sid}&codec=264");
         Ok(anti_code)
@@ -190,7 +240,11 @@ mod tests {
     #[tokio::test]
     async fn test_get_live_info() {
         let huya = Huya;
-        let url = "https://www.huya.com/107222";
+        // let url = "https://www.huya.com/107222";
+        // let url = "https://www.huya.com/28916544";
+        // let url = "https://www.huya.com/89523";
+        // let url = "https://www.huya.com/51818";
+        let url = "https://www.huya.com/749536";
         let live_info = huya.get_live_info(url).await.unwrap();
         println!("{:#?}", live_info);
     }

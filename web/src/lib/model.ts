@@ -26,11 +26,18 @@ export interface LiveInfo {
 	status: LiveStatus;
 	viewerCount: string;
 	roomCover: string;
-	streamUrl: {
-		defaultResolution: string;
-		flv: Array<[string, string]>;
-		hls: Array<[string, string]>;
-	};
+	streams: Array<Stream>;
+}
+
+export interface Stream {
+	url: string;
+	resolution: string;
+	protocol: StreamingProtocol;
+}
+
+export enum StreamingProtocol {
+	Flv = 'Flv',
+	Hls = 'Hls'
 }
 
 export enum LiveStatus {

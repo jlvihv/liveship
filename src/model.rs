@@ -15,6 +15,7 @@ pub enum HttpBody {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LiveInfo {
+    pub url: String,
     // 主播名
     pub anchor_name: String,
     // 主播头像
@@ -28,7 +29,7 @@ pub struct LiveInfo {
     // 直播间封面，如果没有，就是空字符串
     pub room_cover: String,
     // 直播流地址信息
-    pub stream_url: StreamUrlInfo,
+    pub streams: Vec<Stream>,
 }
 
 // 存储设置，用来指明保存位置，文件名等信息
@@ -41,12 +42,26 @@ pub struct StorageSetting {
     pub filename: String,
 }
 
+// #[derive(Debug, Clone, Deserialize, Serialize)]
+// #[serde(rename_all = "camelCase")]
+// pub struct StreamUrlInfo {
+//     pub default_resolution: String,
+//     pub flv: Vec<(String, String)>,
+//     pub hls: Vec<(String, String)>,
+// }
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct StreamUrlInfo {
-    pub default_resolution: String,
-    pub flv: Vec<(String, String)>,
-    pub hls: Vec<(String, String)>,
+pub struct Stream {
+    pub url: String,
+    pub resolution: String,
+    pub protocol: StreamingProtocol,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub enum StreamingProtocol {
+    Flv,
+    Hls,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
@@ -73,11 +88,8 @@ pub struct StorageSettingRequest {
 #[serde(rename_all = "camelCase")]
 pub struct StartRecordRequest {
     pub url: String,
-    pub path: String,
-    pub filename: String,
-    pub stream_kind: String,
-    pub stream_resolution: String,
     pub auto_record: bool,
+    pub stream: Stream,
 }
 
 #[allow(unused)]
@@ -148,8 +160,8 @@ pub struct RecordingPlan {
     pub url: String,
     // 录制策略
     pub strategy: RecordingStrategy,
-    pub stream_kind: String,
-    pub stream_resolution: String,
+    // pub stream_protocol: StreamingProtocol,
+    // pub stream_resolution: String,
     pub enabled: bool,
     // 创建于，时间戳 i64
     pub created_at: i64,
@@ -248,11 +260,15 @@ pub mod plan {
     use super::*;
 
     impl RecordingPlan {
-        pub fn new(url: &str, stream_kind: &str, stream_resolution: &str) -> RecordingPlan {
+        pub fn new(
+            url: &str,
+            // protocol: StreamingProtocol,
+            // stream_resolution: &str,
+        ) -> RecordingPlan {
             RecordingPlan {
                 url: url.into(),
-                stream_kind: stream_kind.into(),
-                stream_resolution: stream_resolution.into(),
+                // stream_protocol: protocol,
+                // stream_resolution: stream_resolution.into(),
                 strategy: crate::model::RecordingStrategy::AnchorLive,
                 enabled: true,
                 created_at: Utc::now().timestamp_millis(),
@@ -282,6 +298,9 @@ pub mod platform {
                 }
                 _ if url.starts_with("https://www.xiaohongshu.com/") || url == "xiaohongshu" => {
                     PlatformKind::Xiaohongshu
+                }
+                _ if url.starts_with("https://www.huya.com/") || url == "huya" => {
+                    PlatformKind::Huya
                 }
                 _ => PlatformKind::Unknown,
             }

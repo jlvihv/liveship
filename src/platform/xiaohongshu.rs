@@ -1,5 +1,5 @@
 use crate::{
-    model::{JsonValue, LiveInfo, LiveStatus, PlatformKind, StreamUrlInfo},
+    model::{JsonValue, LiveInfo, LiveStatus, PlatformKind, Stream, StreamingProtocol},
     recorder::Recorder,
     request,
 };
@@ -64,17 +64,18 @@ impl Recorder for Xiaohongshu {
             room_id, appuid
         );
         let live_info = LiveInfo {
+            url: url.into(),
             anchor_name: anchor_name.into(),
             anchor_avatar: anchor_avatar.into(),
             title: room_title.into(),
             status: LiveStatus::Unknown,
             viewer_count: "".into(),
             room_cover: room_cover.into(),
-            stream_url: StreamUrlInfo {
-                default_resolution: "".into(),
-                flv: vec![(String::from("default"), flv_url)],
-                hls: vec![],
-            },
+            streams: vec![Stream {
+                url: flv_url,
+                resolution: "default".into(),
+                protocol: StreamingProtocol::Flv,
+            }],
         };
 
         Ok(live_info)

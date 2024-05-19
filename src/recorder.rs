@@ -3,7 +3,7 @@ use async_trait::async_trait;
 
 use crate::{
     model::{LiveInfo, PlatformKind},
-    platform::{Douyin, Xiaohongshu},
+    platform::{Douyin, Huya, Xiaohongshu},
 };
 
 // 录制器 trait
@@ -11,7 +11,7 @@ use crate::{
 #[async_trait]
 pub trait Recorder {
     // 获取直播信息
-    async fn get_live_info(&self, url: &str) -> Result<LiveInfo>;
+    async fn get_live_info(&self, room_url: &str) -> Result<LiveInfo>;
 
     // 获取平台类型
     fn kind(&self) -> PlatformKind;
@@ -23,6 +23,7 @@ pub fn get_platform_impl(url: &str) -> Result<Box<dyn Recorder + Send + Sync>> {
     match platform_kind {
         PlatformKind::Douyin => Ok(Box::new(Douyin::new())),
         PlatformKind::Xiaohongshu => Ok(Box::new(Xiaohongshu::new())),
+        PlatformKind::Huya => Ok(Box::new(Huya::new())),
         _ => Err(anyhow::anyhow!("Unknown platform: {}", url)),
     }
 }

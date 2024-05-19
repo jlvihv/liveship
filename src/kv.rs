@@ -278,6 +278,26 @@ pub mod history {
     }
 }
 
+pub mod live {
+    use crate::model::LiveInfo;
+
+    use super::*;
+
+    /// 添加一条直播记录
+    #[allow(unused)]
+    pub fn add(live: &LiveInfo) -> Result<()> {
+        let write_txn = db().begin_write()?;
+        {
+            let mut table = write_txn.open_table(TABLE)?;
+            let key = format!("live:{}", live.url);
+            let live = serde_json::to_vec(live)?;
+            table.insert(key.as_str(), &*live)?;
+        }
+        write_txn.commit()?;
+        Ok(())
+    }
+}
+
 mod tests {
     #[test]
     fn test_kv() {

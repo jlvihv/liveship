@@ -4,7 +4,7 @@ use once_cell::sync::Lazy;
 use reqwest::header::{HeaderMap, HeaderValue};
 
 use crate::{
-    model::{JsonMap, JsonValue, LiveInfo, LiveStatus, PlatformKind, StreamUrlInfo},
+    model::{JsonMap, JsonValue, LiveInfo, LiveStatus, PlatformKind, Stream, StreamingProtocol},
     recorder::Recorder,
     request,
 };
@@ -25,8 +25,8 @@ impl Recorder for Douyin {
     }
 
     // 获取直播信息，需要返回直播状态、流地址、主播名、直播标题等信息
-    async fn get_live_info(&self, url: &str) -> Result<LiveInfo> {
-        let stream_info = Self::get_stream_info(url).await?;
+    async fn get_live_info(&self, room_url: &str) -> Result<LiveInfo> {
+        let stream_info = Self::get_stream_info(room_url).await?;
         let stream_info = JsonValue::Object(stream_info);
         // 使用 json pointer 的方式从 json 中提取数据
         // 总是提供默认值，尽量不返回错误
@@ -49,17 +49,14 @@ impl Recorder for Douyin {
         // 如果当前不是直播状态，直接返回空信息，因为也获取不到
         if live_status != LiveStatus::Live {
             return Ok(LiveInfo {
+                url: room_url.into(),
                 anchor_name: anchor_name.into(),
                 anchor_avatar: "".into(),
                 title: "".into(),
                 status: live_status,
                 viewer_count: "".into(),
                 room_cover: "".into(),
-                stream_url: StreamUrlInfo {
-                    default_resolution: "".into(),
-                    flv: vec![],
-                    hls: vec![],
-                },
+                streams: vec![],
             });
         }
         let title = stream_info
@@ -83,40 +80,46 @@ impl Recorder for Douyin {
             .as_object()
             .ok_or_else(|| anyhow!("stream_url is not a object"))?
             .clone();
-        let default_resolution = stream_url
-            .get("default_resolution")
-            .unwrap_or_else(|| &JsonValue::Null)
-            .as_str()
-            .unwrap_or_default();
+        // let default_resolution = stream_url
+        //     .get("default_resolution")
+        //     .unwrap_or_else(|| &JsonValue::Null)
+        //     .as_str()
+        //     .unwrap_or_default();
         let flv_url_map = stream_url
             .get("flv_pull_url")
             .ok_or_else(|| anyhow!("flv_pull_url not found"))?
             .as_object()
             .ok_or_else(|| anyhow!("flv_pull_url is not a object"))?;
-        let hls_url_map = stream_url
-            .get("hls_pull_url_map")
-            .ok_or_else(|| anyhow!("hls_pull_url_map not found"))?
-            .as_object()
-            .ok_or_else(|| anyhow!("hls_pull_url_map is not a object"))?;
-        let stream_url_info = StreamUrlInfo {
-            default_resolution: default_resolution.into(),
-            flv: flv_url_map
-                .iter()
-                .map(|(k, v)| (k.to_string(), v.as_str().unwrap_or_default().to_string()))
-                .collect(),
-            hls: hls_url_map
-                .iter()
-                .map(|(k, v)| (k.to_string(), v.as_str().unwrap_or_default().to_string()))
-                .collect(),
-        };
+        // let hls_url_map = stream_url
+        //     .get("hls_pull_url_map")
+        //     .ok_or_else(|| anyhow!("hls_pull_url_map not found"))?
+        //     .as_object()
+        //     .ok_or_else(|| anyhow!("hls_pull_url_map is not a object"))?;
+        let mut streams = vec![];
+        flv_url_map.iter().for_each(|(resolution, url)| {
+            streams.push(Stream {
+                resolution: resolution.to_string(),
+                url: url.as_str().unwrap_or_default().to_string(),
+                protocol: StreamingProtocol::Flv,
+            });
+        });
+        // hls_url_map.iter().for_each(|(resolution, url)| {
+        //     streams.push(Stream {
+        //         resolution: resolution.to_string(),
+        //         url: url.as_str().unwrap_or_default().to_string(),
+        //         protocol: StreamingProtocol::Hls,
+        //     });
+        // });
+
         Ok(LiveInfo {
+            url: room_url.into(),
             anchor_name: anchor_name.into(),
             anchor_avatar: anchor_avatar.into(),
             title: title.into(),
             status: live_status,
             viewer_count: viewer_count.into(),
-            stream_url: stream_url_info,
             room_cover: "".into(),
+            streams,
         })
     }
 }

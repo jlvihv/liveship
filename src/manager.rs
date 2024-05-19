@@ -3,7 +3,7 @@ use chrono::Utc;
 use std::{path::PathBuf, process::Child};
 
 use dashmap::DashMap;
-use log::{error, info, warn};
+use log::{error, info};
 use once_cell::sync::Lazy;
 
 use crate::{
@@ -19,50 +19,21 @@ pub static TASKS: Lazy<DashMap<String, Child>> = Lazy::new(|| DashMap::new());
 mod inner {
     use super::*;
 
-    pub async fn start_record(url: &str, stream_kind: &str, stream_resolution: &str) -> Result<()> {
+    pub async fn start_record(room_url: &str) -> Result<()> {
         // 如果已经在录制了，就不再录制，返回错误
-        if inner::get_record_status(url).await? == RecordStatus::Recording {
+        if inner::get_record_status(room_url).await? == RecordStatus::Recording {
             return Err(anyhow::anyhow!("Already recording"));
         }
-        let platform_impl = recorder::get_platform_impl(url)?;
-        let live_info = platform_impl.get_live_info(url).await?;
+        let platform_impl = recorder::get_platform_impl(room_url)?;
+        let live_info = platform_impl.get_live_info(room_url).await?;
         // 如果不在播，就不录制
         if live_info.status == LiveStatus::NotLive {
             return Err(anyhow::anyhow!("该主播不在播"));
         }
-        if live_info.stream_url.hls.is_empty() && live_info.stream_url.flv.is_empty() {
-            warn!("stream_url is empty");
-            return Err(anyhow::anyhow!("stream_url is empty"));
-        }
-        let mut stream_url;
-        if stream_kind == "hls" {
-            // 使用迭代器遍历 hls，找到对应分辨率的流地址
-            stream_url = live_info
-                .stream_url
-                .hls
-                .iter()
-                .find(|(resolution, _)| resolution == stream_resolution)
-                .map(|(_, url)| url.clone())
-                .unwrap_or_default();
-            // 如果找不到，则使用第一个
-            if stream_url.is_empty() && !live_info.stream_url.hls.is_empty() {
-                stream_url = live_info.stream_url.hls.first().unwrap().1.clone();
-            }
-        } else {
-            // 使用迭代器遍历 flv，找到对应分辨率的流地址
-            stream_url = live_info
-                .stream_url
-                .flv
-                .iter()
-                .find(|(resolution, _)| resolution == stream_resolution)
-                .map(|(_, url)| url.clone())
-                .unwrap_or_default();
-            // 如果找不到，则使用第一个
-            if stream_url.is_empty() && !live_info.stream_url.flv.is_empty() {
-                stream_url = live_info.stream_url.flv.first().unwrap().1.clone();
-            }
-        }
-
+        let stream = live_info
+            .streams
+            .first()
+            .ok_or_else(|| anyhow::anyhow!("No stream found in live info: {:?}", live_info))?;
         let (path, filename) =
             utils::generate_path_and_filename(&platform_impl.kind(), &live_info.anchor_name)
                 .await?;
@@ -78,18 +49,18 @@ mod inner {
             .to_str()
             .ok_or_else(|| anyhow::anyhow!("Could not convert path to string: {:?}", path))?;
 
-        inner::record(url, &stream_url, full_filename).await?;
+        inner::record(room_url, &stream.url, full_filename).await?;
 
         // 记录录制历史
-        let mut history = RecordingHistory::new(url, full_filename);
+        let mut history = RecordingHistory::new(room_url, full_filename);
         // 记录直播间信息
         history.live_room_info = Some(LiveRoomInfo {
-            url: url.to_string(),
+            url: room_url.to_string(),
             anchor_name: live_info.anchor_name,
             platform_kind: platform_impl.kind(),
             anchor_avatar: live_info.anchor_avatar,
             title: live_info.title,
-            room_cover: "".into(),
+            room_cover: live_info.room_cover,
         });
         kv::history::add(&history).unwrap_or_else(|e| {
             error!("Could not add recording history: {}", e);
@@ -141,18 +112,16 @@ pub mod record {
     use super::*;
 
     /// 开始录制，就是调用 ffmpeg::record 方法
-    pub async fn start(
-        url: &str,
-        stream_kind: &str,
-        stream_resolution: &str,
-        auto_record: bool,
-    ) -> Result<JsonValue> {
+    /// 这里到底需要哪些参数呢？还是只需要 url 就可以了？
+    /// 这里只需要 url 就可以了，因为 url 包含了平台信息，所以可以根据 url 获取到平台信息
+    /// 但是呢，我们还需要分辨率信息，所以还是需要调用 platform_impl.get_live_info 方法
+    pub async fn start(url: &str, auto_record: bool) -> Result<JsonValue> {
         // 如果要自动录制，加入录制计划表
         if auto_record {
-            let plan = RecordingPlan::new(url, stream_kind, stream_resolution);
+            let plan = RecordingPlan::new(url);
             kv::plan::add(&plan)?;
         }
-        inner::start_record(url, stream_kind, stream_resolution).await?;
+        inner::start_record(url).await?;
         Ok(JsonValue::Null)
     }
 

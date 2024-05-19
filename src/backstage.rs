@@ -127,11 +127,8 @@ pub async fn check_plans() {
             continue;
         }
         // 创建录制任务
-        let _ =
-            manager::record::start(&plan.url, &plan.stream_kind, &plan.stream_resolution, false)
-                .await
-                .map_err(|e| {
-                    error!("check_plans start record error: {}", e);
-                });
+        let _ = manager::record::start(&plan.url, false).await.map_err(|e| {
+            error!("check_plans start record error: {}", e);
+        });
     }
 }

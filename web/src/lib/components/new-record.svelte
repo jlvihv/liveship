@@ -195,38 +195,10 @@
 						</div>
 						<div class="pt-8">
 							<div class="grid grid-cols-2">
-								<div class="grid grid-cols-2">
-									<label for="hls">
-										<input
-											type="radio"
-											id="hls"
-											name="streamKind"
-											value="hls"
-											bind:group={streamKind}
-										/>
-										HLS</label
-									>
-									<label for="flv">
-										<input
-											type="radio"
-											id="flv"
-											name="streamKind"
-											value="flv"
-											bind:group={streamKind}
-										/>
-										FLV</label
-									>
-								</div>
 								<select bind:value={streamResolution} class="w-full">
-									{#if streamKind === 'flv'}
-										{#each liveInfo.streamUrl.flv as item}
-											<option value={item[0]}>{getResolutionName(item[0])}</option>
-										{/each}
-									{:else}
-										{#each liveInfo.streamUrl.hls as item}
-											<option value={item[0]}>{getResolutionName(item[0])}</option>
-										{/each}
-									{/if}
+									{#each liveInfo.streams as item}
+										<option value={item.url}>{getResolutionName(item.resolution)}</option>
+									{/each}
 								</select>
 							</div>
 						</div>

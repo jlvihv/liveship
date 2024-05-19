@@ -76,11 +76,11 @@ mod record {
     /// 开始录制
     pub async fn start(Json(req): Json<StartRecordRequest>) -> Json<ApiResponse> {
         info!("start_record: {:?}", req);
+        // 到底要不要用 req.stream 这个参数呢？
         api_response!(manager::record::start(
             &req.url,
-            &req.stream_kind,
-            &req.stream_resolution,
             req.auto_record,
+            // req.stream
         ))
     }
 
