@@ -179,7 +179,7 @@
 		<input
 			bind:value={url}
 			class="input input-bordered input-info w-full"
-			placeholder="在这里输入抖音直播间地址"
+			placeholder="在这里输入直播间地址"
 			oninput={handleinput}
 		/>
 	</div>
@@ -203,12 +203,16 @@
 	<div class="mt-4 w-1/2">
 		{#if isFirst}
 			<div class="py-4 text-sm text-gray-500">
-				<p>tips: 目前仅支持抖音直播</p>
+				<p>tips: 目前仅支持抖音直播和虎牙直播</p>
 				<p>
 					您可访问<a
 						class="px-2 text-blue-500 transition duration-200 hover:text-blue-700"
 						href="https://live.douyin.com"
 						target="_blank">https://live.douyin.com</a
+					>和<a
+						class="px-2 text-blue-500 transition duration-200 hover:text-blue-700"
+						href="https://www.huya.com"
+						target="_blank">https://www.huya.com</a
 					>
 					寻找喜爱的直播间进行录制
 				</p>
