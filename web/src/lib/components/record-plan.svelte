@@ -72,11 +72,11 @@
 
 {#if list.length > 0}
 	<div class="overflow-x-auto">
-		<table class="table-zebra table">
+		<table class="table table-zebra">
 			<thead>
 				<tr>
 					<th>主播</th>
-					<th>直播间标题</th>
+					<th>直播间</th>
 					<th>是否启用</th>
 					<th>直播流类型</th>
 					<th>录制分辨率</th>
@@ -86,15 +86,23 @@
 			<tbody>
 				{#each list as row}
 					<tr>
-						<td>{row.liveRoomInfo?.anchorName}</td>
-						<td
-							><a
-								href={row.url}
-								target="_blank"
-								class="text-blue-500 transition duration-200 hover:text-blue-700"
-								>{row.liveRoomInfo?.title}</a
-							></td
-						>
+						<td>{row.liveInfo?.anchorName}</td>
+						<td>
+							{#if row.liveInfo && row.liveInfo!.title}
+								<a
+									href={row.url}
+									target="_blank"
+									class="text-blue-500 transition duration-200 hover:text-blue-700"
+									>{row.liveInfo?.title}</a
+								>
+							{:else}
+								<a
+									href={row.url}
+									target="_blank"
+									class="text-blue-500 transition duration-200 hover:text-blue-700">{row.url}</a
+								>
+							{/if}
+						</td>
 						<td>
 							{#if row.enabled}
 								<button

@@ -2,14 +2,14 @@ import { API_URL } from '$lib';
 import type { RecordingStrategy } from '$lib/model';
 
 // 新建录制计划
-export async function addPlan(url: string, path: string, strategy: RecordingStrategy) {
+export async function addPlan(url: string) {
 	// post /api/plan
 	const response = await fetch(`${API_URL}/plan`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json'
 		},
-		body: JSON.stringify({ url, path, strategy })
+		body: JSON.stringify({ url })
 	});
 	const data = await response.json();
 	return data;

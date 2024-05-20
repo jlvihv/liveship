@@ -1,5 +1,5 @@
 pub use anyhow::Result;
-use log::info;
+use log::{debug, info};
 use std::process::{Child, Stdio};
 
 pub fn record(ffmpeg_path: &str, url: &str, filename: &str) -> Result<Child> {
@@ -54,7 +54,24 @@ pub fn record(ffmpeg_path: &str, url: &str, filename: &str) -> Result<Child> {
     let mut cmd = std::process::Command::new(ffmpeg_path);
     cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
     cmd.args(&ffmpeg_command);
-    let child = cmd.spawn()?;
+    let mut child = cmd.spawn()?;
+    // 立刻 try_wait 一下，看是否有错误
+    if let Some(status) = child.try_wait()? {
+        let output = child.wait_with_output()?;
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let error_message = format!(
+            "status: {:?}\nstdout: {}\nstderr: {}",
+            status, stdout, stderr
+        );
+        return Err(anyhow::anyhow!(error_message));
+    }
+    debug!(
+        "录制进程启动：{:?} for url: {}, to: {}",
+        child.id(),
+        url,
+        filename
+    );
     Ok(child)
 }
 

@@ -9,6 +9,11 @@ use axum::{
     http::{HeaderMap, HeaderValue},
 };
 use base64::prelude::*;
+use log::debug;
+use once_cell::sync::Lazy;
+
+static REGEX: Lazy<regex::Regex> =
+    Lazy::new(|| regex::Regex::new(r#"stream: (\{"data".*?),"iWebDefaultBitRate""#).unwrap());
 
 pub struct Huya;
 
@@ -25,20 +30,19 @@ impl Recorder for Huya {
     }
 
     async fn get_live_info(&self, url: &str) -> Result<LiveInfo> {
-        let body = request::new_client_get_with_headers(url, Self::headers()?)
+        let body = request::get_with_headers(url, Self::headers()?)
             .await?
             .text()
             .await?;
-        println!("body: {:#?}", body);
-        let re = regex::Regex::new(r#"stream: (\{"data".*?),"iWebDefaultBitRate""#)?;
-        let json_str = re
+        debug!("huya html body: {:#?}", body);
+        let json_str = REGEX
             .captures(&body)
             .ok_or_else(|| anyhow!("stream not found"))?
             .get(1)
             .ok_or_else(|| anyhow!("stream not found"))?
             .as_str();
         let json_data: serde_json::Value = serde_json::from_str(&format!("{json_str}{}", "}"))?;
-        // println!("json_data: {:#?}", json_data);
+        debug!("huya json_data: {:#?}", json_data);
         let game_live_info = json_data
             .pointer("/data/0/gameLiveInfo")
             .ok_or_else(|| anyhow!("gameLiveInfo not found"))?
@@ -54,6 +58,21 @@ impl Recorder for Huya {
             .ok_or_else(|| anyhow!("nick not found"))?
             .as_str()
             .ok_or_else(|| anyhow!("nick is not String"))?;
+        let anchor_avatar = game_live_info
+            .get("avatar180")
+            .ok_or_else(|| anyhow!("avatar180 not found"))?
+            .as_str()
+            .ok_or_else(|| anyhow!("avatar180 is not String"))?;
+        let title = game_live_info
+            .get("introduction")
+            .ok_or_else(|| anyhow!("introduction not found"))?
+            .as_str()
+            .ok_or_else(|| anyhow!("introduction is not String"))?;
+        let room_cover = game_live_info
+            .get("screenshot")
+            .ok_or_else(|| anyhow!("screenshot not found"))?
+            .as_str()
+            .ok_or_else(|| anyhow!("screenshot is not String"))?;
         let select_cdn = game_stream_info_list
             .get(0)
             .ok_or_else(|| anyhow!("gameStreamInfoList is empty"))?;
@@ -92,18 +111,18 @@ impl Recorder for Huya {
             .ok_or_else(|| anyhow!("sHlsAntiCode not found"))?
             .as_str()
             .ok_or_else(|| anyhow!("sHlsAntiCode is not String"))?;
-        println!("flv_anti_code: {:#?}", flv_anti_code);
+        debug!("flv_anti_code: {:#?}", flv_anti_code);
         let new_anti_code = Self::get_anti_code(flv_anti_code, stream_name)?;
         let flv_url = format!(
             "{}/{}.{}?{}&ratio=",
             flv_url, stream_name, flv_url_suffix, new_anti_code
         );
-        let m3u8_url = format!(
+        let _m3u8_url = format!(
             "{}/{}.{}?{}&ratio=",
             hls_url, stream_name, hls_url_suffix, new_anti_code
         );
         let quality_list = flv_anti_code.split("&exsphd=").collect::<Vec<&str>>();
-        // println!("quality_list: {:#?}", quality_list);
+        debug!("huya quality_list: {:#?}", quality_list);
         if quality_list.len() > 1 {
             // let quality_list = quality_list[1].split(",").collect::<Vec<&str>>();
             // let quality_list = quality_list
@@ -118,19 +137,21 @@ impl Recorder for Huya {
             resolution: "default".into(),
             protocol: crate::model::StreamingProtocol::Flv,
         });
-        streams.push(crate::model::Stream {
-            url: m3u8_url,
-            resolution: "default".into(),
-            protocol: crate::model::StreamingProtocol::Hls,
-        });
+        // 虎牙 hls 直播源不稳定，容易断流，直接不提供吧
+        // streams.push(crate::model::Stream {
+        //     url: _m3u8_url,
+        //     resolution: "default".into(),
+        //     protocol: crate::model::StreamingProtocol::Hls,
+        // });
         let info = LiveInfo {
             url: url.into(),
             anchor_name: anchor_name.into(),
-            anchor_avatar: "".to_string(),
-            title: "".to_string(),
+            anchor_avatar: anchor_avatar.into(),
+            title: title.into(),
             status: crate::model::LiveStatus::Live,
             viewer_count: "".to_string(),
-            room_cover: "".to_string(),
+            room_cover: room_cover.into(),
+            platform_kind: PlatformKind::Huya,
             streams,
         };
         Ok(info)
@@ -163,10 +184,6 @@ impl Huya {
         // sdk_sid 是毫秒时间戳
         let sdk_sid = chrono::Utc::now().timestamp_millis();
 
-        // 计算 uuid 和 uid 参数值
-        // let mut rng = rand::thread_rng();
-        // let init_uuid: i64 = rng.gen_range(0..4294967295); // 直接初始化
-
         // init_uuid 的计算方法：
         // 1. 取时间戳后 10 位
         // 2. 将其放大 1000 倍
@@ -176,11 +193,6 @@ impl Huya {
         // let uid = rng.gen_range(1400000000000..1400009999999); // 经过测试 uid 也可以使用 init_uuid 代替
         let uid = init_uuid;
         let seq_id = uid + sdk_sid; // 移动端请求的直播流地址中包含 seqId 参数
-
-        // 计算 ws_time 参数值 (16 进制) 可以是当前毫秒时间戳，当然也可以直接使用 url_query['wsTime'][0]
-        // 原始最大误差不得慢 240000 毫秒
-        // let target_unix_time = (sdk_sid + 110624) / 1000;
-        // let ws_time = format!("{:x}", target_unix_time);
 
         // 使用 & 分割字符串，得到参数列表
         let params = old_anti_code.split('&').collect::<Vec<&str>>();
@@ -208,7 +220,7 @@ impl Huya {
             .get(0)
             .map(|&x| x.into())
             .unwrap_or_default();
-        println!("fm: {:#?}", fm);
+        debug!("fm: {:#?}", fm);
 
         let ctype = params
             .iter()

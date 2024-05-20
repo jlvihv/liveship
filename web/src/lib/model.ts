@@ -20,6 +20,7 @@ export interface ApiResponse {
 }
 
 export interface LiveInfo {
+	url: string;
 	anchorName: string;
 	anchorAvatar: string;
 	title: string;
@@ -27,6 +28,7 @@ export interface LiveInfo {
 	viewerCount: string;
 	roomCover: string;
 	streams: Array<Stream>;
+	platformKind: string;
 }
 
 export interface Stream {
@@ -56,7 +58,6 @@ export enum RecordingStatus {
 }
 
 export interface RecordingHistory {
-	id: number;
 	url: string;
 	status: RecordingStatus;
 	startTime: number;
@@ -64,7 +65,7 @@ export interface RecordingHistory {
 	path: string;
 	fileSize: number;
 	deleted: boolean;
-	liveRoomInfo: LiveInfo;
+	liveInfo?: LiveInfo;
 }
 
 export type RecordingStrategy =
@@ -82,11 +83,17 @@ export interface RecordingPlan {
 	enabled: boolean;
 	createdAt: number;
 	updatedAt: number;
-	liveRoomInfo?: LiveInfo;
+	liveInfo?: LiveInfo;
 }
 
 export interface AppConfig {
 	ffmpegPath: string;
 	savePath: string;
 	liveInfoCheckInterval: number;
+}
+
+export interface Stream {
+	url: string;
+	resolution: string;
+	protocol: StreamingProtocol;
 }

@@ -100,7 +100,9 @@ pub mod plan {
         let mut plans = Vec::new();
         for kv in iter {
             let (_, plan) = kv?;
-            let plan: RecordingPlan = serde_json::from_slice(&plan.value())?;
+            let mut plan: RecordingPlan = serde_json::from_slice(&plan.value())?;
+            // 获取直播间信息
+            plan.live_info = super::live::get(&plan.url)?;
             plans.push(plan);
         }
         sort(&mut plans);
@@ -115,8 +117,10 @@ pub mod plan {
         let mut plans = Vec::new();
         for kv in iter {
             let (_, plan) = kv?;
-            let plan: RecordingPlan = serde_json::from_slice(&plan.value())?;
+            let mut plan: RecordingPlan = serde_json::from_slice(&plan.value())?;
             if plan.enabled {
+                // 获取直播间信息
+                plan.live_info = super::live::get(&plan.url)?;
                 plans.push(plan);
             }
         }
@@ -204,6 +208,8 @@ pub mod recording {
 }
 
 pub mod history {
+    use log::{debug, error};
+
     use super::*;
 
     /// 增加一条录制历史
@@ -230,7 +236,13 @@ pub mod history {
         let iter = table.range("history:".."historyz")?;
         for kv in iter {
             let (_, history) = kv?;
-            let history: RecordingHistory = serde_json::from_slice(&history.value())?;
+            let mut history: RecordingHistory = serde_json::from_slice(&history.value())?;
+            // 获取直播间信息
+            history.live_info = super::live::get(&history.url).map_err(|e| {
+                error!("get live info error: {:?}", e);
+                e
+            })?;
+            debug!("get history: {:?}", history);
             histories.push(history);
         }
         sort(&mut histories);
@@ -279,12 +291,13 @@ pub mod history {
 }
 
 pub mod live {
+    use log::debug;
+
     use crate::model::LiveInfo;
 
     use super::*;
 
-    /// 添加一条直播记录
-    #[allow(unused)]
+    /// 添加一条直播信息
     pub fn add(live: &LiveInfo) -> Result<()> {
         let write_txn = db().begin_write()?;
         {
@@ -295,6 +308,46 @@ pub mod live {
         }
         write_txn.commit()?;
         Ok(())
+    }
+
+    /// 删除一条直播信息
+    pub fn delete(url: &str) -> Result<()> {
+        let write_txn = db().begin_write()?;
+        {
+            let mut table = write_txn.open_table(TABLE)?;
+            table.remove(format!("live:{}", url).as_str())?;
+        }
+        write_txn.commit()?;
+        Ok(())
+    }
+
+    /// 获取所有直播信息
+    pub fn get_all() -> Result<Vec<LiveInfo>> {
+        let mut lives = Vec::new();
+        let read_txn = db().begin_read()?;
+        let table = read_txn.open_table(TABLE)?;
+        let iter = table.range("live:".."livez")?;
+        for kv in iter {
+            let (_, live) = kv?;
+            let live: LiveInfo = serde_json::from_slice(&live.value())?;
+            lives.push(live);
+        }
+        Ok(lives)
+    }
+
+    /// 获取一条直播信息
+    pub fn get(url: &str) -> Result<Option<LiveInfo>> {
+        let read_txn = db().begin_read()?;
+        let table = read_txn.open_table(TABLE)?;
+        let value = table.get(format!("live:{}", url).as_str())?;
+        match value {
+            Some(value) => {
+                let live: LiveInfo = serde_json::from_slice(&value.value())?;
+                debug!("get live: {:?}", live);
+                Ok(Some(live))
+            }
+            None => Ok(None),
+        }
     }
 }
 

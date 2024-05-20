@@ -8,7 +8,7 @@ use once_cell::sync::Lazy;
 
 use crate::{
     ffmpeg, kv,
-    model::{JsonValue, LiveRoomInfo, LiveStatus, RecordStatus, RecordingHistory, RecordingPlan},
+    model::{JsonValue, LiveStatus, RecordStatus, RecordingHistory, RecordingPlan},
     recorder, utils,
 };
 
@@ -16,16 +16,22 @@ use crate::{
 pub static TASKS: Lazy<DashMap<String, Child>> = Lazy::new(|| DashMap::new());
 
 /// 内部方法，不对外暴露
-mod inner {
+pub mod inner {
+    use crate::model::{PlatformKind, Stream};
+
     use super::*;
 
-    pub async fn start_record(room_url: &str) -> Result<()> {
+    pub async fn start_record_default(room_url: &str) -> Result<()> {
         // 如果已经在录制了，就不再录制，返回错误
         if inner::get_record_status(room_url).await? == RecordStatus::Recording {
             return Err(anyhow::anyhow!("Already recording"));
         }
         let platform_impl = recorder::get_platform_impl(room_url)?;
         let live_info = platform_impl.get_live_info(room_url).await?;
+        // 保存直播信息
+        kv::live::add(&live_info).unwrap_or_else(|e| {
+            error!("Could not add live info: {}", e);
+        });
         // 如果不在播，就不录制
         if live_info.status == LiveStatus::NotLive {
             return Err(anyhow::anyhow!("该主播不在播"));
@@ -49,19 +55,10 @@ mod inner {
             .to_str()
             .ok_or_else(|| anyhow::anyhow!("Could not convert path to string: {:?}", path))?;
 
-        inner::record(room_url, &stream.url, full_filename).await?;
+        inner::record_with_ffmpeg(room_url, &stream.url, full_filename).await?;
 
         // 记录录制历史
-        let mut history = RecordingHistory::new(room_url, full_filename);
-        // 记录直播间信息
-        history.live_room_info = Some(LiveRoomInfo {
-            url: room_url.to_string(),
-            anchor_name: live_info.anchor_name,
-            platform_kind: platform_impl.kind(),
-            anchor_avatar: live_info.anchor_avatar,
-            title: live_info.title,
-            room_cover: live_info.room_cover,
-        });
+        let history = RecordingHistory::new(room_url, full_filename);
         kv::history::add(&history).unwrap_or_else(|e| {
             error!("Could not add recording history: {}", e);
         });
@@ -69,7 +66,47 @@ mod inner {
         Ok(())
     }
 
-    pub(super) async fn record(url: &str, stream_url: &str, full_filename: &str) -> Result<()> {
+    /// 为 api 提供的录制方法，使用 api 传入的 stream 信息，不再获取直播间信息
+    pub async fn start_record_with_stream(
+        room_url: &str,
+        stream: Stream,
+        platform_kind: &PlatformKind,
+        anchor_name: &str,
+    ) -> Result<()> {
+        // 如果已经在录制了，就不再录制，返回错误
+        if inner::get_record_status(room_url).await? == RecordStatus::Recording {
+            return Err(anyhow::anyhow!("Already recording"));
+        }
+        let (path, filename) =
+            utils::generate_path_and_filename(platform_kind, anchor_name).await?;
+        // 如果路径不存在，则创建
+        if !std::path::Path::new(&path).exists() {
+            std::fs::create_dir_all(&path)?;
+        }
+
+        // 使用系统提供的函数拼接路径和文件名
+        let path = PathBuf::from(path);
+        let full_filename = path.join(filename);
+        let full_filename = full_filename
+            .to_str()
+            .ok_or_else(|| anyhow::anyhow!("Could not convert path to string: {:?}", path))?;
+
+        inner::record_with_ffmpeg(room_url, &stream.url, full_filename).await?;
+
+        // 记录录制历史
+        let history = RecordingHistory::new(room_url, full_filename);
+        kv::history::add(&history).unwrap_or_else(|e| {
+            error!("Could not add recording history: {}", e);
+        });
+
+        Ok(())
+    }
+
+    pub(super) async fn record_with_ffmpeg(
+        url: &str,
+        stream_url: &str,
+        full_filename: &str,
+    ) -> Result<()> {
         let ffmpeg_path = kv::config::get()?.ffmpeg_path;
         let mut child = match ffmpeg::record(&ffmpeg_path, stream_url, full_filename) {
             Ok(child) => child,
@@ -109,19 +146,24 @@ mod inner {
 }
 
 pub mod record {
+    use crate::model::{PlatformKind, Stream};
+
     use super::*;
 
     /// 开始录制，就是调用 ffmpeg::record 方法
-    /// 这里到底需要哪些参数呢？还是只需要 url 就可以了？
-    /// 这里只需要 url 就可以了，因为 url 包含了平台信息，所以可以根据 url 获取到平台信息
-    /// 但是呢，我们还需要分辨率信息，所以还是需要调用 platform_impl.get_live_info 方法
-    pub async fn start(url: &str, auto_record: bool) -> Result<JsonValue> {
+    pub async fn start(
+        url: &str,
+        auto_record: bool,
+        stream: Stream,
+        platform_kind: PlatformKind,
+        anchor_name: String,
+    ) -> Result<JsonValue> {
         // 如果要自动录制，加入录制计划表
         if auto_record {
             let plan = RecordingPlan::new(url);
             kv::plan::add(&plan)?;
         }
-        inner::start_record(url).await?;
+        inner::start_record_with_stream(url, stream, &platform_kind, &anchor_name).await?;
         Ok(JsonValue::Null)
     }
 
@@ -216,7 +258,7 @@ pub mod history {
 
     /// 在文件管理器中打开文件夹
     pub async fn open(path: &str) -> Result<JsonValue> {
-        explorer::show_item_in_folder(path).map_err(|e| anyhow::anyhow!(e))?;
+        explorer::open_in_folder(path).map_err(|e| anyhow::anyhow!(e))?;
         Ok(JsonValue::Null)
     }
 }
@@ -243,9 +285,11 @@ pub mod live {
     /// 获取直播信息
     pub async fn info(url: &str) -> Result<JsonValue> {
         let platform_impl = recorder::get_platform_impl(url)?;
-        Ok(serde_json::to_value(
-            platform_impl.get_live_info(url).await?,
-        )?)
+        let info = platform_impl.get_live_info(url).await?;
+        // 保存到数据库
+        let _ =
+            kv::live::add(&info).map_err(|e| error!("Could not save live info to database: {}", e));
+        Ok(serde_json::to_value(info)?)
     }
 }
 

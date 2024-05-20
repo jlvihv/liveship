@@ -57,6 +57,7 @@ impl Recorder for Douyin {
                 viewer_count: "".into(),
                 room_cover: "".into(),
                 streams: vec![],
+                platform_kind: PlatformKind::Douyin,
             });
         }
         let title = stream_info
@@ -90,11 +91,11 @@ impl Recorder for Douyin {
             .ok_or_else(|| anyhow!("flv_pull_url not found"))?
             .as_object()
             .ok_or_else(|| anyhow!("flv_pull_url is not a object"))?;
-        // let hls_url_map = stream_url
-        //     .get("hls_pull_url_map")
-        //     .ok_or_else(|| anyhow!("hls_pull_url_map not found"))?
-        //     .as_object()
-        //     .ok_or_else(|| anyhow!("hls_pull_url_map is not a object"))?;
+        let hls_url_map = stream_url
+            .get("hls_pull_url_map")
+            .ok_or_else(|| anyhow!("hls_pull_url_map not found"))?
+            .as_object()
+            .ok_or_else(|| anyhow!("hls_pull_url_map is not a object"))?;
         let mut streams = vec![];
         flv_url_map.iter().for_each(|(resolution, url)| {
             streams.push(Stream {
@@ -103,13 +104,13 @@ impl Recorder for Douyin {
                 protocol: StreamingProtocol::Flv,
             });
         });
-        // hls_url_map.iter().for_each(|(resolution, url)| {
-        //     streams.push(Stream {
-        //         resolution: resolution.to_string(),
-        //         url: url.as_str().unwrap_or_default().to_string(),
-        //         protocol: StreamingProtocol::Hls,
-        //     });
-        // });
+        hls_url_map.iter().for_each(|(resolution, url)| {
+            streams.push(Stream {
+                resolution: resolution.to_string(),
+                url: url.as_str().unwrap_or_default().to_string(),
+                protocol: StreamingProtocol::Hls,
+            });
+        });
 
         Ok(LiveInfo {
             url: room_url.into(),
@@ -119,6 +120,7 @@ impl Recorder for Douyin {
             status: live_status,
             viewer_count: viewer_count.into(),
             room_cover: "".into(),
+            platform_kind: PlatformKind::Douyin,
             streams,
         })
     }

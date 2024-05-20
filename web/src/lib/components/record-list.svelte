@@ -121,6 +121,7 @@
 			<thead>
 				<tr>
 					<th>录制状态</th>
+					<th>平台</th>
 					<th>主播</th>
 					<th>直播间标题</th>
 					<th>录制时长</th>
@@ -144,13 +145,14 @@
 								</span>
 							</p>
 						</td>
-						<td>{row.liveRoomInfo.anchorName}</td>
+						<td>{row.liveInfo?.platformKind}</td>
+						<td>{row.liveInfo?.anchorName}</td>
 						<td
 							><a
 								href={row.url}
 								target="_blank"
 								class="text-blue-500 transition duration-200 hover:text-blue-700"
-								>{row.liveRoomInfo.title}</a
+								>{row.liveInfo?.title}</a
 							></td
 						>
 						<td>{calcDuration(row.startTime, row.endTime)}</td>
@@ -159,7 +161,7 @@
 							{#if !row.deleted}
 								<button
 									onclick={() => openFolder(row.path)}
-									class="tooltip"
+									class="tooltip text-left"
 									data-tip="点击以在文件管理器中打开"
 								>
 									{row.path}

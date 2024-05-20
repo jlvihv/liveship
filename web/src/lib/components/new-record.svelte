@@ -1,26 +1,40 @@
 <script lang="ts">
-	import { LiveStatus, RecordingStatus, type ApiResponse, type LiveInfo } from '$lib/model';
+	import {
+		LiveStatus,
+		RecordingStatus,
+		StreamingProtocol,
+		type ApiResponse,
+		type LiveInfo,
+		type Stream
+	} from '$lib/model';
 	import { toast } from 'svelte-sonner';
 	import Dialog from './dialog.svelte';
 	import { debounce, getResolutionName } from '$lib/utils';
 	import { getLiveInfo } from '$lib/api/live';
 	import { getRecordStatus, startRecord, stopRecord } from '$lib/api/record';
 	import { onMount } from 'svelte';
+	import { addPlan } from '$lib/api/plan';
 
 	let url = $state('');
 	// 用一个变量来表示是否正在请求
 	let requesting = $state(false);
+	// 用一个变量用来表示图标的旋转
+	let isRotating = $state(false);
+	// 刷新按钮 setTimeout 的 id
+	let refreshTimeout: number | null = null;
 	let liveInfo: LiveInfo | null = $state(null);
 	let errorMessage = $state('');
-	let storagePath = $state('');
-	let storageFilename = $state('');
-	let streamKind = $state('hls');
-	let streamResolution: string = $state('HD1');
 	let recordStatus = $state(RecordingStatus.NotRecording);
 	let loading = $state(false);
 	let dialogUrl = $state('');
 	let autoRecord = $state(false);
 	let isFirst = $state(false);
+	let stream: Stream = $state({
+		url: '',
+		resolution: '',
+		protocol: StreamingProtocol.Flv
+	});
+	let refreshCount = $state(0);
 
 	onMount(() => {
 		// 从 localStorage 中获取 isFrist
@@ -37,43 +51,73 @@
 
 	// 防抖调用 api, 500ms 内只调用一次
 	const handleinput = debounce(async () => {
+		fetchGetLiveInfo(url);
+		refreshCount = 0;
+	}, 500);
+
+	async function fetchGetLiveInfo(url: string) {
 		if (!url) {
 			return;
 		}
+		// 取消之前的 setTimeout
+		if (refreshTimeout) {
+			clearTimeout(refreshTimeout);
+		}
+		refreshCount++;
+		isRotating = true;
 		requesting = true;
 		errorMessage = '';
 		liveInfo = null;
-		storageFilename = '';
 		let resp: ApiResponse = await getLiveInfo(url);
 		requesting = false;
 		if (resp.code == 0) {
 			liveInfo = resp.data as LiveInfo;
+			if (liveInfo.streams.length > 0) {
+				stream = liveInfo.streams[0];
+			}
 			let recordStatusResponse: ApiResponse = await getRecordStatus(url);
 			if (recordStatusResponse.code == 0) {
 				recordStatus = recordStatusResponse.data as RecordingStatus;
 			}
+			console.log(liveInfo);
 		} else {
 			errorMessage = resp.message;
+			console.error(resp.message);
 		}
-	}, 500);
+		refreshTimeout = setTimeout(() => {
+			isRotating = false;
+		}, 1000);
+	}
+
+	async function handleAddPlan(url: string) {
+		if (url == '') {
+			toast.error('请先填写直播地址');
+			return;
+		}
+		loading = true;
+		let resp: ApiResponse = await addPlan(url);
+		if (resp.code == 0) {
+			toast.success('已经添加计划啦');
+		} else {
+			toast.error('添加计划失败', {
+				description: resp.message
+			});
+		}
+		loading = false;
+	}
 
 	async function handleStartRecord(url: string) {
 		if (url == '') {
 			toast.error('请先填写直播地址');
 			return;
 		}
-		if (streamResolution == '') {
-			toast.error('请先选择分辨率');
-			return;
-		}
 		loading = true;
 		let resp: ApiResponse = await startRecord(
 			url,
-			storagePath,
-			storageFilename,
-			streamKind,
-			streamResolution,
-			autoRecord
+			autoRecord,
+			stream,
+			liveInfo!.platformKind,
+			liveInfo!.anchorName
 		);
 		if (resp.code == 0) {
 			let recordStatusResponse: ApiResponse = await getRecordStatus(url);
@@ -108,7 +152,6 @@
 				description: resp.message
 			});
 		}
-		loading = false;
 	}
 
 	function closeDialog() {
@@ -140,6 +183,23 @@
 			oninput={handleinput}
 		/>
 	</div>
+	{#if errorMessage || liveInfo || requesting}
+		<div class="mt-4 flex w-1/2 justify-end">
+			<button class="btn btn-circle" onclick={() => fetchGetLiveInfo(url)}>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					xmlns:xlink="http://www.w3.org/1999/xlink"
+					viewBox="0 0 24 24"
+					class="h-8 w-8 {isRotating ? 'rotate' : ''}"
+					><path
+						d="M17.65 6.35a7.95 7.95 0 0 0-6.48-2.31c-3.67.37-6.69 3.35-7.1 7.02C3.52 15.91 7.27 20 12 20a7.98 7.98 0 0 0 7.21-4.56c.32-.67-.16-1.44-.9-1.44c-.37 0-.72.2-.88.53a5.994 5.994 0 0 1-6.8 3.31c-2.22-.49-4.01-2.3-4.48-4.52A6.002 6.002 0 0 1 12 6c1.66 0 3.14.69 4.22 1.78l-1.51 1.51c-.63.63-.19 1.71.7 1.71H19c.55 0 1-.45 1-1V6.41c0-.89-1.08-1.34-1.71-.71l-.64.65z"
+						fill="currentColor"
+					></path></svg
+				>
+			</button>
+		</div>
+	{/if}
+
 	<div class="mt-4 w-1/2">
 		{#if isFirst}
 			<div class="py-4 text-sm text-gray-500">
@@ -167,7 +227,7 @@
 			<div>
 				<div class="w-full">
 					{#if liveInfo.status !== LiveStatus.NotLive}
-						<div class="pt-8">
+						<div>
 							<h1 class="text-2xl font-bold">{liveInfo.title}</h1>
 						</div>
 
@@ -194,22 +254,27 @@
 							</div>
 						</div>
 						<div class="pt-8">
-							<div class="grid grid-cols-2">
-								<select bind:value={streamResolution} class="w-full">
+							<div class="grid grid-cols-2 gap-8">
+								<select bind:value={stream.url} class="select select-info w-full">
 									{#each liveInfo.streams as item}
-										<option value={item.url}>{getResolutionName(item.resolution)}</option>
+										<option value={item.url}
+											>{item.protocol + ' ' + getResolutionName(item.resolution)}</option
+										>
 									{/each}
 								</select>
-							</div>
-						</div>
-						<div class="pt-8">
-							<!-- 可选框，以后自动录制该主播 -->
-							<div class="flex gap-4 pb-8">
-								<label for="autoRecord">
-									<input type="checkbox" id="autoRecord" bind:checked={autoRecord} />
+								<!-- 可选框，以后自动录制该主播 -->
+								<label for="autoRecord" class="flex w-full items-center gap-4">
+									<input
+										class="checkbox"
+										type="checkbox"
+										id="autoRecord"
+										bind:checked={autoRecord}
+									/>
 									以后自动录制该主播</label
 								>
 							</div>
+						</div>
+						<div class="pt-8">
 							{#if loading}
 								<div class="mt-2 flex w-full items-center justify-center">
 									<span class="loading loading-dots loading-md"></span>
@@ -227,16 +292,36 @@
 					{:else}
 						<div>
 							<div>主播 {liveInfo.anchorName} 当前不在播</div>
+							<button class="btn btn-primary mt-8 w-full" onclick={() => handleAddPlan(url)}
+								>加入录制计划，主播开播后自动录制</button
+							>
 						</div>
 					{/if}
 				</div>
 			</div>
 		{/if}
 		{#if errorMessage}
-			<div class="mt-4 text-red-500">{errorMessage}</div>
+			<div class="text-red-500">{errorMessage}</div>
+			{#if refreshCount >= 5}
+				<button class="btn btn-primary mt-8 w-full" onclick={() => handleAddPlan(url)}
+					>强制忽略错误，加入录制计划并自动重试</button
+				>
+			{/if}
 		{/if}
 	</div>
 </div>
 
 <style>
+	.rotate {
+		animation: rotation 1s linear;
+	}
+
+	@keyframes rotation {
+		from {
+			transform: rotate(0deg);
+		}
+		to {
+			transform: rotate(360deg);
+		}
+	}
 </style>

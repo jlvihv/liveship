@@ -71,6 +71,7 @@ impl Recorder for Xiaohongshu {
             status: LiveStatus::Unknown,
             viewer_count: "".into(),
             room_cover: room_cover.into(),
+            platform_kind: PlatformKind::Xiaohongshu,
             streams: vec![Stream {
                 url: flv_url,
                 resolution: "default".into(),

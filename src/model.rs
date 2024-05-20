@@ -30,6 +30,8 @@ pub struct LiveInfo {
     pub room_cover: String,
     // 直播流地址信息
     pub streams: Vec<Stream>,
+    // 直播平台
+    pub platform_kind: PlatformKind,
 }
 
 // 存储设置，用来指明保存位置，文件名等信息
@@ -90,6 +92,8 @@ pub struct StartRecordRequest {
     pub url: String,
     pub auto_record: bool,
     pub stream: Stream,
+    pub platform_kind: PlatformKind,
+    pub anchor_name: String,
 }
 
 #[allow(unused)]
@@ -150,7 +154,7 @@ pub struct RecordingHistory {
     // 是否已删除
     pub deleted: bool,
     // 直播间信息
-    pub live_room_info: Option<LiveRoomInfo>,
+    pub live_info: Option<LiveInfo>,
 }
 
 // 录制计划
@@ -168,7 +172,7 @@ pub struct RecordingPlan {
     // 更新于，时间戳 i64，如果是 0, 说明没有更新过
     pub updated_at: i64,
     // 直播间信息
-    pub live_room_info: Option<LiveRoomInfo>,
+    pub live_info: Option<LiveInfo>,
 }
 
 // 录制策略
@@ -184,24 +188,6 @@ pub enum RecordingStrategy {
     AnchorLive,
     // 主播开播就录制，指定录制时长，单位秒
     AnchorLiveWithDuration(i64),
-}
-
-// 直播间链接地址信息
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct LiveRoomInfo {
-    // 直播间链接地址
-    pub url: String,
-    // 主播名
-    pub anchor_name: String,
-    // 主播头像
-    pub anchor_avatar: String,
-    // 直播间标题
-    pub title: String,
-    // 直播平台类型
-    pub platform_kind: PlatformKind,
-    // 直播间封面
-    pub room_cover: String,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -250,7 +236,7 @@ pub mod history {
                 end_time: 0,
                 file_size: 0,
                 deleted: false,
-                live_room_info: None,
+                live_info: None,
             }
         }
     }
@@ -262,18 +248,14 @@ pub mod plan {
     impl RecordingPlan {
         pub fn new(
             url: &str,
-            // protocol: StreamingProtocol,
-            // stream_resolution: &str,
         ) -> RecordingPlan {
             RecordingPlan {
                 url: url.into(),
-                // stream_protocol: protocol,
-                // stream_resolution: stream_resolution.into(),
                 strategy: crate::model::RecordingStrategy::AnchorLive,
                 enabled: true,
                 created_at: Utc::now().timestamp_millis(),
                 updated_at: 0,
-                live_room_info: None,
+                live_info: None,
             }
         }
     }

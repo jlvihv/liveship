@@ -1,13 +1,13 @@
 import { API_URL } from '$lib';
+import type { Stream } from '$lib/model';
 
 // 开始录制
 export async function startRecord(
 	url: string,
-	path: string,
-	filename: string,
-	streamKind: string,
-	streamResolution: string,
-	autoRecord: boolean
+	autoRecord: boolean,
+	stream: Stream,
+	platformKind: string,
+	anchorName: string
 ) {
 	// post /api/record/start
 	const response = await fetch(`${API_URL}/record/start`, {
@@ -15,7 +15,7 @@ export async function startRecord(
 		headers: {
 			'Content-Type': 'application/json'
 		},
-		body: JSON.stringify({ url, path, filename, streamKind, streamResolution, autoRecord })
+		body: JSON.stringify({ url, autoRecord, stream, platformKind, anchorName })
 	});
 	const data = await response.json();
 	return data;

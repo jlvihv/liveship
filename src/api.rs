@@ -57,7 +57,9 @@ pub async fn listen(port: u16) {
         .await
         .unwrap();
 
-    println!("Listening on http://127.0.0.1:{}", port);
+    let url = format!("http://127.0.0.1:{}", port);
+    println!("Listening on {url}");
+    let _ = open::that(url);
 
     axum::serve(listener, app).await.unwrap();
 }
@@ -80,7 +82,9 @@ mod record {
         api_response!(manager::record::start(
             &req.url,
             req.auto_record,
-            // req.stream
+            req.stream,
+            req.platform_kind,
+            req.anchor_name
         ))
     }
 
@@ -117,9 +121,11 @@ mod plan {
     }
 
     /// 新建录制计划
-    pub async fn add(Json(payload): Json<RecordingPlan>) -> Json<ApiResponse> {
-        info!("create_recording_plan: {:?}", payload);
-        api_response!(manager::plan::add(&payload))
+    pub async fn add(Json(req): Json<JsonValue>) -> Json<ApiResponse> {
+        info!("add plan: {:?}", req);
+        let url = extract_string!(req, "url");
+        let plan = RecordingPlan::new(url);
+        api_response!(manager::plan::add(&plan))
     }
 
     /// 删除录制计划

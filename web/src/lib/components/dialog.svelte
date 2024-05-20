@@ -1,5 +1,5 @@
 <script lang="ts">
-	let { children, text } = $props();
+	let { children, text }: { children?: any; text: string } = $props();
 </script>
 
 <dialog id="dialog" class="w-96 rounded-lg p-4 shadow-lg dark:shadow-gray-700">

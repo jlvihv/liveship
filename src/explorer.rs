@@ -4,7 +4,7 @@ use std::path::PathBuf;
 #[cfg(not(target_os = "linux"))]
 use std::process::Command;
 
-pub fn show_item_in_folder(path: &str) -> Result<(), String> {
+pub fn open_in_folder(path: &str) -> Result<(), String> {
     // linux 直接返回错误
     #[cfg(target_os = "linux")]
     {

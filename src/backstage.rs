@@ -95,10 +95,10 @@ pub async fn check_tasks() -> anyhow::Result<()> {
             let stdout = String::from_utf8_lossy(&output.stdout);
             let stderr = String::from_utf8_lossy(&output.stderr);
             let error_message = format!(
-                "status: {:?}\nstdout: {}\nstderr: {}",
+                "status: {:?}; stdout: {}; stderr: {}",
                 status, stdout, stderr
             );
-            error!("{}", error_message);
+            error!("任务已退出: {}", error_message);
         }
         // 更新数据库记录
         kv::history::end(&url).unwrap_or_else(|e| {
@@ -127,8 +127,10 @@ pub async fn check_plans() {
             continue;
         }
         // 创建录制任务
-        let _ = manager::record::start(&plan.url, false).await.map_err(|e| {
-            error!("check_plans start record error: {}", e);
-        });
+        let _ = manager::inner::start_record_default(&plan.url)
+            .await
+            .map_err(|e| {
+                error!("check_plans start record error: {}", e);
+            });
     }
 }
