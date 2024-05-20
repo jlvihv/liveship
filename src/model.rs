@@ -199,6 +199,8 @@ pub struct AppConfig {
     pub save_path: String,
     // 开播信息检查间隔，单位秒
     pub live_info_check_interval: u64,
+    // 启动时自动打开页面
+    pub open_page_on_startup: bool,
 }
 
 pub mod config {
@@ -218,6 +220,7 @@ pub mod config {
                 ffmpeg_path: "ffmpeg".into(),
                 save_path,
                 live_info_check_interval: 60,
+                open_page_on_startup: true,
             }
         }
     }

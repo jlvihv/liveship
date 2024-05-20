@@ -73,6 +73,16 @@
 
 {#if config}
 	<div class="grid gap-8 p-8 text-gray-400">
+		<label class="label cursor-pointer">
+			启动时自动打开页面
+			<input
+				type="checkbox"
+				class="toggle"
+				placeholder=""
+				bind:checked={config.openPageOnStartup}
+			/>
+		</label>
+		
 		<label class="input input-bordered flex items-center gap-8">
 			ffmpeg 路径
 			<input
@@ -109,13 +119,14 @@
 				bind:value={config.liveInfoCheckInterval}
 			/>
 		</label>
+
 		<div class="flex items-center justify-center gap-8 p-8">
 			{#if changed}
 				<button
 					class="btn btn-wide dark:bg-gray-400 dark:text-gray-800"
 					onclick={() => (config = JSON.parse(JSON.stringify(rawConfig)))}>取消</button
 				>
-				<button class="btn btn-wide btn-primary" onclick={async () => await saveConfig()}
+				<button class="btn btn-primary btn-wide" onclick={async () => await saveConfig()}
 					>保存</button
 				>
 			{/if}

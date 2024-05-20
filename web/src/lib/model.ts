@@ -90,6 +90,7 @@ export interface AppConfig {
 	ffmpegPath: string;
 	savePath: string;
 	liveInfoCheckInterval: number;
+	openPageOnStartup: boolean;
 }
 
 export interface Stream {

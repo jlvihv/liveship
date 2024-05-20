@@ -1,4 +1,7 @@
-use crate::model::{ApiResponse, JsonValue, RecordingPlan, StartRecordRequest};
+use crate::{
+    kv,
+    model::{ApiResponse, JsonValue, RecordingPlan, StartRecordRequest},
+};
 use axum::{
     extract::Path,
     routing::{get, post, put},
@@ -59,7 +62,12 @@ pub async fn listen(port: u16) {
 
     let url = format!("http://127.0.0.1:{}", port);
     println!("Listening on {url}");
-    let _ = open::that(url);
+    if kv::config::get()
+        .map(|conf| conf.open_page_on_startup)
+        .unwrap_or(true)
+    {
+        let _ = open::that(url);
+    }
 
     axum::serve(listener, app).await.unwrap();
 }
