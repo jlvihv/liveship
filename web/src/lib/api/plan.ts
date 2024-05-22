@@ -1,5 +1,4 @@
 import { API_URL } from '$lib';
-import type { RecordingStrategy } from '$lib/model';
 
 // 新建录制计划
 export async function addPlan(url: string) {

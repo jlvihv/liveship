@@ -107,6 +107,27 @@
 		}
 		return dayjs(startTime).to(dayjs(endTime), true);
 	}
+
+	function getPlatformIcon(platformKind: string): string {
+		switch (platformKind.toLowerCase()) {
+			case 'douyin':
+				return 'https://www.douyin.com/favicon.ico';
+			case 'huya':
+				return 'https://www.huya.com/favicon.ico';
+			case 'bilibili':
+				return 'https://www.bilibili.com/favicon.ico';
+			case 'douyu':
+				return 'https://www.douyu.com/favicon.ico';
+			case 'kuaishou':
+				return 'https://m.kuaishou.com/favicon.ico';
+			case 'twitch':
+				return 'https://m.twitch.tv/favicon.ico?desktop-redirect=true';
+			case 'youtube':
+				return 'https://m.youtube.com/static/apple-touch-icon-72x72-precomposed.png';
+			default:
+				return 'unknown';
+		}
+	}
 </script>
 
 <!-- 原生对话框 -->
@@ -115,12 +136,16 @@
 	<button class="btn btn-primary w-24" onclick={() => handleStopRecord(dialogUrl)}>确定</button>
 </Dialog>
 
+{#snippet icon(platformKind:string)}
+	<img class="h-6 w-6" src={getPlatformIcon(platformKind)} alt={platformKind} />
+{/snippet}
+
 {#if list.length > 0}
 	<div class="overflow-x-auto">
 		<table class="table table-zebra">
 			<thead>
 				<tr>
-					<th>录制状态</th>
+					<th class="text-center">录制状态</th>
 					<th>平台</th>
 					<th>主播</th>
 					<th>直播间标题</th>
@@ -145,8 +170,11 @@
 								</span>
 							</p>
 						</td>
-						<td>{row.liveInfo?.platformKind}</td>
-						<td>{row.liveInfo?.anchorName}</td>
+						<td>
+							{#if row.liveInfo?.platformKind}
+								{@render icon(row.liveInfo?.platformKind)}
+							{/if}
+						</td><td>{row.liveInfo?.anchorName}</td>
 						<td
 							><a
 								href={row.url}
