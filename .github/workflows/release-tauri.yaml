@@ -59,7 +59,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: liveship-v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version.
-          tauriScript: ~/.bun/bin/bun
+          tauriScript: ~/.bun/bin/bun tauri
           releaseName: 'liveship v__VERSION__'
           releaseBody: 'See the assets to download this version and install.'
           releaseDraft: true
