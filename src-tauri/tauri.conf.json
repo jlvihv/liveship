@@ -1,6 +1,6 @@
 {
 	"productName": "liveship",
-	"version": "0.0.1",
+	"version": "0.1.5",
 	"identifier": "app.happyship",
 	"build": {
 		"beforeDevCommand": "bun run dev",
