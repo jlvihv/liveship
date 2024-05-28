@@ -37,6 +37,7 @@ pub fn run() {
             manager::history::open_in_folder,
             manager::plan::get_all_plans,
             manager::plan::add_plan,
+            manager::plan::add_plan_with_url,
             manager::plan::delete_plan,
             manager::plan::update_plan_status,
             manager::plan::get_last_polling_time,

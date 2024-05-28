@@ -1,4 +1,5 @@
 use crate::model::AppConfig;
+use crate::model::LiveInfo;
 use crate::model::{PlatformKind, Stream};
 use crate::{
     ffmpeg, kv,
@@ -16,8 +17,6 @@ pub static TASKS: Lazy<DashMap<String, Child>> = Lazy::new(|| DashMap::new());
 
 /// 内部方法，不对外暴露
 pub mod inner {
-    use crate::model::{PlatformKind, Stream};
-
     use super::*;
 
     pub async fn start_record_default(room_url: &str) -> anyhow::Result<()> {
@@ -68,17 +67,16 @@ pub mod inner {
 
     /// 为 api 提供的录制方法，使用 api 传入的 stream 信息，不再获取直播间信息
     pub async fn start_record_with_stream(
-        room_url: &str,
         stream: Stream,
-        platform_kind: &PlatformKind,
-        anchor_name: &str,
+        live_info: LiveInfo,
     ) -> anyhow::Result<()> {
         // 如果已经在录制了，就不再录制，返回错误
-        if inner::get_record_status(room_url).await? == RecordStatus::Recording {
+        if inner::get_record_status(&live_info.url).await? == RecordStatus::Recording {
             return Err(anyhow::anyhow!("Already recording"));
         }
         let (path, filename) =
-            utils::generate_path_and_filename(platform_kind, anchor_name).await?;
+            utils::generate_path_and_filename(&live_info.platform_kind, &live_info.anchor_name)
+                .await?;
         // 如果路径不存在，则创建
         if !std::path::Path::new(&path).exists() {
             std::fs::create_dir_all(&path)?;
@@ -91,10 +89,11 @@ pub mod inner {
             .to_str()
             .ok_or_else(|| anyhow::anyhow!("Could not convert path to string: {:?}", path))?;
 
-        inner::record_with_ffmpeg(room_url, &stream.url, full_filename).await?;
+        inner::record_with_ffmpeg(&live_info.url, &stream.url, full_filename).await?;
 
         // 记录录制历史
-        let history = RecordingHistory::new(room_url, full_filename);
+        let mut history = RecordingHistory::new(&live_info.url, full_filename);
+        history.live_info = Some(live_info);
         kv::history::add(&history).unwrap_or_else(|e| {
             eprintln!("Could not add recording history: {}", e);
         });
@@ -151,18 +150,21 @@ pub mod record {
     /// 开始录制，就是调用 ffmpeg::record 方法
     #[tauri::command]
     pub async fn start_record(
-        url: &str,
         auto_record: bool,
         stream: Stream,
-        platform_kind: PlatformKind,
-        anchor_name: String,
+        live_info: LiveInfo,
     ) -> Result<RecordStatus, String> {
         // 如果要自动录制，加入录制计划表
         if auto_record {
-            let plan = RecordingPlan::new(url);
+            let mut plan = RecordingPlan::new(
+                &live_info.url,
+                stream.protocol.clone(),
+                stream.resolution.clone(),
+            );
+            plan.live_info = Some(live_info.clone());
             kv::plan::add(&plan).map_err(|e| format!("Could not add recording plan: {}", e))?;
         }
-        inner::start_record_with_stream(url, stream, &platform_kind, &anchor_name)
+        inner::start_record_with_stream(stream, live_info)
             .await
             .map_err(|e| {
                 eprintln!("Could not start recording: {}", e);
@@ -245,6 +247,20 @@ pub mod plan {
     /// 新增录制计划
     #[tauri::command]
     pub async fn add_plan(plan: RecordingPlan) -> Result<(), String> {
+        kv::plan::add(&plan).map_err(|e| {
+            eprintln!("Could not add recording plan: {}", e);
+            e.to_string()
+        })?;
+        Ok(())
+    }
+
+    #[tauri::command]
+    pub async fn add_plan_with_url(url: String) -> Result<(), String> {
+        let platform_kind = PlatformKind::from(url.clone());
+        if platform_kind == PlatformKind::Unknown {
+            return Err("Unknown platform".to_string());
+        }
+        let plan = RecordingPlan::new_with_url(&url);
         kv::plan::add(&plan).map_err(|e| {
             eprintln!("Could not add recording plan: {}", e);
             e.to_string()
@@ -346,8 +362,6 @@ pub mod config {
 }
 
 pub mod live {
-    use crate::model::LiveInfo;
-
     use super::*;
 
     /// 获取直播信息

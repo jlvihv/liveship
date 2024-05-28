@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { type ApiResponse, type RecordingPlan } from '$lib/model';
+	import { type RecordingPlan } from '$lib/model';
 	import { invoke } from '@tauri-apps/api/core';
 	import { onDestroy, onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import Dialog from './dialog.svelte';
-	import { closeDialog, openDialog } from '@/utils';
+	import { closeDialog, getPlatformIcon, openDialog } from '@/utils';
 
 	const deletePlanDialogId = 'deletePlan';
 	let list: RecordingPlan[] = $state([]);
@@ -80,11 +80,16 @@
 	}
 </script>
 
+{#snippet icon(platformKind:string)}
+	<img class="h-6 w-6" src={getPlatformIcon(platformKind)} alt={platformKind} />
+{/snippet}
+
 {#if list.length > 0}
 	<div class="h-full w-full overflow-auto">
 		<table class="table table-zebra">
 			<thead>
 				<tr>
+					<th>平台</th>
 					<th class="min-w-20">主播</th>
 					<th>直播间</th>
 					<th>类型</th>
@@ -96,6 +101,11 @@
 			<tbody>
 				{#each list as row}
 					<tr>
+						<td>
+							{#if row.liveInfo?.platformKind}
+								{@render icon(row.liveInfo?.platformKind)}
+							{/if}
+						</td>
 						<td>{row.liveInfo?.anchorName}</td>
 						<td>
 							{#if row.liveInfo && row.liveInfo!.title}
@@ -113,7 +123,7 @@
 								>
 							{/if}
 						</td>
-						<td>{row.streamKind}</td>
+						<td>{row.streamProtocol}</td>
 						<td>{row.streamResolution}</td>
 						<td>
 							{#if row.enabled}

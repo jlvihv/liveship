@@ -44,14 +44,6 @@ pub struct StorageSetting {
     pub filename: String,
 }
 
-// #[derive(Debug, Clone, Deserialize, Serialize)]
-// #[serde(rename_all = "camelCase")]
-// pub struct StreamUrlInfo {
-//     pub default_resolution: String,
-//     pub flv: Vec<(String, String)>,
-//     pub hls: Vec<(String, String)>,
-// }
-
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Stream {
@@ -165,8 +157,8 @@ pub struct RecordingPlan {
     pub url: String,
     // 录制策略
     pub strategy: RecordingStrategy,
-    // pub stream_protocol: StreamingProtocol,
-    // pub stream_resolution: String,
+    pub stream_protocol: StreamingProtocol,
+    pub stream_resolution: String,
     pub enabled: bool,
     // 创建于，时间戳 i64
     pub created_at: i64,
@@ -247,7 +239,11 @@ pub mod plan {
     use super::*;
 
     impl RecordingPlan {
-        pub fn new(url: &str) -> RecordingPlan {
+        pub fn new(
+            url: &str,
+            stream_protocol: StreamingProtocol,
+            stream_resolution: String,
+        ) -> RecordingPlan {
             RecordingPlan {
                 url: url.into(),
                 strategy: crate::model::RecordingStrategy::AnchorLive,
@@ -255,7 +251,13 @@ pub mod plan {
                 created_at: Utc::now().timestamp_millis(),
                 updated_at: 0,
                 live_info: None,
+                stream_protocol,
+                stream_resolution,
             }
+        }
+
+        pub fn new_with_url(url: &str) -> RecordingPlan {
+            RecordingPlan::new(url, StreamingProtocol::Flv, "".into())
         }
     }
 }

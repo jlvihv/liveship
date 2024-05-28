@@ -1,15 +1,14 @@
 <script lang="ts">
 	// icon fluent 28
 
-	import { flip } from 'svelte/animate';
-	import { RecordingStatus, type ApiResponse, type RecordingHistory } from '$lib/model';
+	import { RecordingStatus, type RecordingHistory } from '$lib/model';
 	import { onDestroy, onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import dayjs from 'dayjs';
 	import relativeTime from 'dayjs/plugin/relativeTime';
 	import 'dayjs/locale/zh-cn';
 	import Dialog from './dialog.svelte';
-	import { closeDialog, openDialog, formatFileSize } from '$lib/utils';
+	import { closeDialog, openDialog, formatFileSize, getPlatformIcon } from '$lib/utils';
 	import { invoke } from '@tauri-apps/api/core';
 	dayjs.extend(relativeTime);
 	dayjs.locale('zh-cn');
@@ -103,39 +102,18 @@
 		}
 		return dayjs(startTime).to(dayjs(endTime), true);
 	}
-
-	function getPlatformIcon(platformKind: string): string {
-		switch (platformKind.toLowerCase()) {
-			case 'douyin':
-				return 'https://www.douyin.com/favicon.ico';
-			case 'huya':
-				return 'https://www.huya.com/favicon.ico';
-			case 'bilibili':
-				return 'https://www.bilibili.com/favicon.ico';
-			case 'douyu':
-				return 'https://www.douyu.com/favicon.ico';
-			case 'kuaishou':
-				return 'https://m.kuaishou.com/favicon.ico';
-			case 'twitch':
-				return 'https://m.twitch.tv/favicon.ico?desktop-redirect=true';
-			case 'youtube':
-				return 'https://m.youtube.com/static/apple-touch-icon-72x72-precomposed.png';
-			default:
-				return 'unknown';
-		}
-	}
 </script>
 
 <!-- 原生对话框 -->
 <Dialog id={stopRecordDialogId} text="确定停止录制吗？">
 	<button
-		class="btn w-32"
+		class="btn w-24"
 		onclick={() => {
 			closeDialog(stopRecordDialogId);
 			dialogUrl = '';
 		}}>取消</button
 	>
-	<button class="btn btn-primary w-24" onclick={() => stopRecord(dialogUrl)}>确定</button>
+	<button class="btn btn-primary w-32" onclick={() => stopRecord(dialogUrl)}>确定</button>
 </Dialog>
 
 <Dialog
@@ -184,9 +162,9 @@
 					<th class="text-center">状态</th>
 					<th>平台</th>
 					<th>主播</th>
-					<th>直播间标题</th>
-					<th>录制时长</th>
-					<th>文件大小</th>
+					<th>直播间</th>
+					<th>时长</th>
+					<th>大小</th>
 					<th>文件</th>
 					<th class="min-w-20">操作</th>
 				</tr>

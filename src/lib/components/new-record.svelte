@@ -8,10 +8,10 @@
 		LiveStatus,
 		RecordingStatus,
 		StreamingProtocol,
-		type ApiResponse,
 		type LiveInfo,
 		type Stream
 	} from '$lib/model';
+	import { createLiveInfo } from '@/store.svelte';
 
 	const stopRecordDialogId = 'stopRecord';
 	let url = $state('');
@@ -21,7 +21,8 @@
 	let isRotating = $state(false);
 	// 刷新按钮 setTimeout 的 id
 	let refreshTimeout: number | undefined = $state();
-	let liveInfo: LiveInfo | null = $state(null);
+	let liveInfo: LiveInfo | undefined = $state();
+	const storeLiveInfo = createLiveInfo();
 	let errorMessage = $state('');
 	let recordStatus = $state(RecordingStatus.NotRecording);
 	let loading = $state(false);
@@ -35,6 +36,10 @@
 	let refreshCount = $state(0);
 
 	onMount(() => {
+		// 如果可以 storeLiveInfo 有值，则给到 liveInfo
+		if (storeLiveInfo) {
+			liveInfo = storeLiveInfo.liveInfo;
+		}
 		// 从 localStorage 中获取 isFrist
 		let first = localStorage.getItem('isFirst');
 		isFirst = first === null;
@@ -68,10 +73,11 @@
 		isRotating = true;
 		requesting = true;
 		errorMessage = '';
-		liveInfo = null;
+		liveInfo = undefined;
 		invoke('live_info', { url: url })
 			.then((data) => {
 				liveInfo = data as LiveInfo;
+				storeLiveInfo.set(liveInfo);
 				if (liveInfo.streams.length > 0) {
 					stream = liveInfo.streams[0];
 				}
@@ -84,7 +90,6 @@
 							description: err
 						});
 					});
-				console.log(liveInfo);
 			})
 			.catch((err) => {
 				errorMessage = err;
@@ -99,7 +104,7 @@
 			return;
 		}
 		loading = true;
-		invoke('add_plan', { url })
+		invoke('add_plan_with_url', { url })
 			.then((data) => {
 				toast.success('已经添加计划啦');
 			})
@@ -118,11 +123,9 @@
 		}
 		loading = true;
 		invoke('start_record', {
-			url,
 			autoRecord,
 			stream,
-			platformKind: liveInfo!.platformKind,
-			anchorName: liveInfo!.anchorName
+			liveInfo: liveInfo!
 		})
 			.then((data) => {
 				recordStatus = data as RecordingStatus;
@@ -185,7 +188,7 @@
 				<button
 					onclick={() => {
 						url = '';
-						liveInfo = null;
+						liveInfo = undefined;
 						errorMessage = '';
 					}}
 				>

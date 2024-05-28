@@ -1,24 +1,3 @@
-// pub struct LiveInfo {
-//     // 主播 id
-//     pub anchor_id: String,
-//     // 主播名
-//     pub anchor_name: String,
-//     // 主播头像
-//     pub anchor_avatar: String,
-//     // 直播间标题
-//     pub title: String,
-//     // 直播状态
-//     pub status: LiveStatus,
-//     // 多少人正在看
-//     pub viewer_count: String,
-// }
-
-export interface ApiResponse {
-	code: number;
-	message: string;
-	data: unknown;
-}
-
 export interface LiveInfo {
 	url: string;
 	anchorName: string;
@@ -78,7 +57,7 @@ export type RecordingStrategy =
 export interface RecordingPlan {
 	id: number;
 	url: string;
-	streamKind: string;
+	streamProtocol: string;
 	streamResolution: string;
 	enabled: boolean;
 	createdAt: number;

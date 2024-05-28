@@ -108,7 +108,9 @@ pub mod plan {
             let (_, plan) = kv?;
             let mut plan: RecordingPlan = serde_json::from_slice(&plan.value())?;
             // 获取直播间信息
-            plan.live_info = super::live::get(&plan.url)?;
+            if plan.live_info.is_none() {
+                plan.live_info = super::live::get(&plan.url)?;
+            }
             plans.push(plan);
         }
         sort(&mut plans);
@@ -242,10 +244,12 @@ pub mod history {
             let (_, history) = kv?;
             let mut history: RecordingHistory = serde_json::from_slice(&history.value())?;
             // 获取直播间信息
-            history.live_info = super::live::get(&history.url).map_err(|e| {
-                eprintln!("get live info error: {:?}", e);
-                e
-            })?;
+            if history.live_info.is_none() {
+                history.live_info = super::live::get(&history.url).map_err(|e| {
+                    eprintln!("get live info error: {:?}", e);
+                    e
+                })?;
+            }
             histories.push(history);
         }
         sort(&mut histories);

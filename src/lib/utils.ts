@@ -71,3 +71,24 @@ export function openDialog(id: string) {
 	let dialog = document.getElementById(id) as HTMLDialogElement;
 	dialog?.showModal();
 }
+
+export function getPlatformIcon(platformKind: string): string {
+	switch (platformKind.toLowerCase()) {
+		case 'douyin':
+			return 'https://www.douyin.com/favicon.ico';
+		case 'huya':
+			return 'https://www.huya.com/favicon.ico';
+		case 'bilibili':
+			return 'https://www.bilibili.com/favicon.ico';
+		case 'douyu':
+			return 'https://www.douyu.com/favicon.ico';
+		case 'kuaishou':
+			return 'https://m.kuaishou.com/favicon.ico';
+		case 'twitch':
+			return 'https://m.twitch.tv/favicon.ico?desktop-redirect=true';
+		case 'youtube':
+			return 'https://m.youtube.com/static/apple-touch-icon-72x72-precomposed.png';
+		default:
+			return 'unknown';
+	}
+}
