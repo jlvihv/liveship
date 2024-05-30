@@ -1,5 +1,5 @@
 use crate::{
-    model::{LiveInfo, PlatformKind},
+    model::{JsonValue, LiveInfo, LiveStatus, PlatformKind, Stream, StreamingProtocol},
     recorder::Recorder,
     request,
 };
@@ -16,7 +16,6 @@ impl Recorder for Tiktok {
             .await?
             .text()
             .await?;
-        println!("{:#?}", body);
         let re = regex::Regex::new(
             r#"<script id="SIGI_STATE" type="application/json">(.*?)</script><script id="SIGI_RETRY" type="application/json">"#,
         )?;
@@ -27,17 +26,63 @@ impl Recorder for Tiktok {
             .ok_or_else(|| anyhow::anyhow!("No match"))?
             .as_str();
         let json: serde_json::Value = serde_json::from_str(json_str)?;
-        println!("{:#?}", json);
         let live_room = json
             .pointer("/LiveRoom/liveRoomUserInfo")
-            .ok_or_else(|| anyhow::anyhow!("live room user info not found"))?
-            .as_object()
-            .ok_or_else(|| anyhow::anyhow!("live room user info is not an object"))?;
+            .ok_or_else(|| anyhow::anyhow!("live room user info not found"))?;
         let user = live_room
             .get("user")
             .ok_or_else(|| anyhow::anyhow!("user not found"))?
             .as_object()
             .ok_or_else(|| anyhow::anyhow!("user is not an object"))?;
+        let anchor_name = user
+            .get("nickname")
+            .ok_or_else(|| anyhow::anyhow!("nickname not found"))?
+            .as_str()
+            .ok_or_else(|| anyhow::anyhow!("nickname is not a string"))?;
+        let status = user
+            .get("status")
+            .ok_or_else(|| anyhow::anyhow!("status not found"))?
+            .as_number()
+            .ok_or_else(|| anyhow::anyhow!("status is not a number"))?
+            .as_u64()
+            .ok_or_else(|| anyhow::anyhow!("status is not an integer"))?;
+        // status 2 表示正在直播
+        if status == 2 {
+            let stream_data = live_room
+                .pointer("/liveRoom/streamData/pull_data/stream_data")
+                .ok_or_else(|| anyhow::anyhow!("stream data not found"))?
+                .as_str()
+                .ok_or_else(|| anyhow::anyhow!("stream data is not a string"))?;
+            let stream_data: JsonValue = serde_json::from_str(stream_data)?;
+            let stream_data = stream_data
+                .get("data")
+                .ok_or_else(|| anyhow::anyhow!("data not found"))?
+                .as_object()
+                .ok_or_else(|| anyhow::anyhow!("data is not an object"))?;
+            let mut streams = Vec::new();
+            // 遍历这个对象的所有键值对
+            for (key, value) in stream_data.iter() {
+                println!("key: {}, value: {}", key, value);
+                let stream = Stream {
+                    url: value
+                        .pointer("/main/flv")
+                        .ok_or_else(|| anyhow::anyhow!("flv not found"))?
+                        .as_str()
+                        .ok_or_else(|| anyhow::anyhow!("flv is not a string"))?
+                        .into(),
+                    resolution: key.into(),
+                    protocol: StreamingProtocol::Flv,
+                };
+                streams.push(stream);
+            }
+            let live_info = LiveInfo {
+                url: url.into(),
+                anchor_name: anchor_name.into(),
+                status: LiveStatus::Live,
+                streams,
+            };
+        }
+        // println!("user: {:#?}", user);
 
         todo!()
     }
@@ -68,8 +113,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_stream_info() {
-        let url = "https://www.tiktok.com/@rumteenoladi/live";
+        // let url = "https://www.tiktok.com/@rumteenoladi/live";
+        let url = "https://www.tiktok.com/@yermaaddd/live";
         let json_data = Tiktok.get_live_info(url).await.unwrap();
-        println!("{:#?}", json_data);
     }
 }

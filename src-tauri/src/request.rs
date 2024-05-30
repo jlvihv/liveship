@@ -12,6 +12,7 @@ pub async fn get_with_headers(url: &str, headers: HeaderMap) -> Result<Response>
     Ok(resp)
 }
 
+#[allow(unused)]
 pub async fn new_client_get_with_headers(url: &str, headers: HeaderMap) -> Result<Response> {
     let client = reqwest::Client::new();
     let req = client.get(url).headers(headers);

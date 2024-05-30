@@ -3,6 +3,34 @@ use std::process::{Child, Stdio};
 
 pub fn record(ffmpeg_path: &str, url: &str, filename: &str) -> Result<Child> {
     println!("开始录制：{} -> {}", url, filename);
+
+    // 调用 ffmpeg 命令
+    let mut cmd = std::process::Command::new(ffmpeg_path);
+    cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
+    let ffmpeg_command = build_ffmpeg_command(url, filename);
+    cmd.args(&ffmpeg_command);
+    let mut child = cmd.spawn()?;
+    // 立刻 try_wait 一下，看是否有错误
+    if let Some(status) = child.try_wait()? {
+        let output = child.wait_with_output()?;
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let error_message = format!(
+            "status: {:?}\nstdout: {}\nstderr: {}",
+            status, stdout, stderr
+        );
+        return Err(anyhow::anyhow!(error_message));
+    }
+    println!(
+        "录制进程启动：{:?} for url: {}, to: {}",
+        child.id(),
+        url,
+        filename
+    );
+    Ok(child)
+}
+
+fn build_ffmpeg_command(url: &str, filename: &str) -> Vec<String> {
     let user_agent = r#""Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36""#;
     let analyzeduration = "20000000";
     let probesize = "10000000";
@@ -49,29 +77,7 @@ pub fn record(ffmpeg_path: &str, url: &str, filename: &str) -> Result<Child> {
         "-c:v", "copy", "-c:a", "copy", "-map", "0", "-f", "mpegts", filename,
     ];
     ffmpeg_command.extend_from_slice(&push_command);
-    // 调用 ffmpeg 命令
-    let mut cmd = std::process::Command::new(ffmpeg_path);
-    cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
-    cmd.args(&ffmpeg_command);
-    let mut child = cmd.spawn()?;
-    // 立刻 try_wait 一下，看是否有错误
-    if let Some(status) = child.try_wait()? {
-        let output = child.wait_with_output()?;
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        let error_message = format!(
-            "status: {:?}\nstdout: {}\nstderr: {}",
-            status, stdout, stderr
-        );
-        return Err(anyhow::anyhow!(error_message));
-    }
-    println!(
-        "录制进程启动：{:?} for url: {}, to: {}",
-        child.id(),
-        url,
-        filename
-    );
-    Ok(child)
+    ffmpeg_command.into_iter().map(|s| s.into()).collect()
 }
 
 /// 检查 ffmpeg 是否可用，返回 ffmpeg 版本号
