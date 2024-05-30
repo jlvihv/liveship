@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { fade } from 'svelte/transition';
-	import type { ApiResponse, AppConfig } from '$lib/model';
+	import type { AppConfig } from '$lib/model';
 	import { onMount, tick } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { invoke } from '@tauri-apps/api/core';
