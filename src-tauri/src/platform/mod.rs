@@ -7,4 +7,5 @@ mod xiaohongshu;
 
 pub use douyin::Douyin;
 pub use huya::Huya;
+pub use tiktok::Tiktok;
 pub use xiaohongshu::Xiaohongshu;

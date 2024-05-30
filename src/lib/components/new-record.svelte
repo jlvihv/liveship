@@ -11,7 +11,6 @@
 		type LiveInfo,
 		type Stream
 	} from '$lib/model';
-	import { createLiveInfo } from '@/store.svelte';
 
 	const stopRecordDialogId = 'stopRecord';
 	let url = $state('');
@@ -22,24 +21,15 @@
 	// 刷新按钮 setTimeout 的 id
 	let refreshTimeout: number | undefined = $state();
 	let liveInfo: LiveInfo | undefined = $state();
-	const storeLiveInfo = createLiveInfo();
 	let errorMessage = $state('');
 	let recordStatus = $state(RecordingStatus.NotRecording);
 	let loading = $state(false);
 	let autoRecord = $state(false);
 	let isFirst = $state(false);
-	let stream: Stream = $state({
-		url: '',
-		resolution: '',
-		protocol: StreamingProtocol.Flv
-	});
+	let stream_url = $state('');
 	let refreshCount = $state(0);
 
 	onMount(() => {
-		// 如果可以 storeLiveInfo 有值，则给到 liveInfo
-		if (storeLiveInfo) {
-			liveInfo = storeLiveInfo.liveInfo;
-		}
 		// 从 localStorage 中获取 isFrist
 		let first = localStorage.getItem('isFirst');
 		isFirst = first === null;
@@ -62,6 +52,7 @@
 		if (!url) {
 			return;
 		}
+		requesting = true;
 		// 取消之前的 setTimeout
 		if (refreshTimeout) {
 			clearTimeout(refreshTimeout);
@@ -71,15 +62,14 @@
 		}, 2000);
 		refreshCount++;
 		isRotating = true;
-		requesting = true;
 		errorMessage = '';
 		liveInfo = undefined;
 		invoke('live_info', { url: url })
 			.then((data) => {
+				requesting = false;
 				liveInfo = data as LiveInfo;
-				storeLiveInfo.set(liveInfo);
 				if (liveInfo.streams.length > 0) {
-					stream = liveInfo.streams[0];
+					stream_url = liveInfo.streams[0].url;
 				}
 				invoke('record_status', { url })
 					.then((data) => {
@@ -95,7 +85,6 @@
 				errorMessage = err;
 				console.error(err);
 			});
-		requesting = false;
 	}
 
 	async function handleAddPlan(url: string) {
@@ -122,6 +111,13 @@
 			return;
 		}
 		loading = true;
+		// 从 liveInfo 中获取 stream
+		let stream: Stream | undefined = liveInfo?.streams.find((s) => s.url === stream_url);
+		if (!stream) {
+			toast.error('请先选择一个流');
+			loading = false;
+			return;
+		}
 		invoke('start_record', {
 			autoRecord,
 			stream,
@@ -228,28 +224,12 @@
 	<div class="mt-4 w-1/2 min-w-[600px]">
 		{#if isFirst}
 			<div class="py-4 text-sm text-gray-500">
-				<p>tips: 目前仅支持抖音直播和虎牙直播</p>
-				<p>
-					您可访问<a
-						class="px-2 text-blue-500 transition duration-200 hover:text-blue-700"
-						href="https://live.douyin.com"
-						target="_blank">https://live.douyin.com</a
-					>和<a
-						class="px-2 text-blue-500 transition duration-200 hover:text-blue-700"
-						href="https://www.huya.com"
-						target="_blank">https://www.huya.com</a
-					>
-					寻找喜爱的直播间进行录制
-				</p>
+				<p>tips: 已支持抖音、虎牙、tiktok</p>
 			</div>
 		{/if}
 		{#if requesting}
-			<div class="mt-4 flex items-center space-x-4">
-				<div class="skeleton h-12 w-12 rounded-full"></div>
-				<div class="space-y-2">
-					<div class="skeleton h-4 w-[250px]"></div>
-					<div class="skeleton h-4 w-[200px]"></div>
-				</div>
+			<div class="flex h-full w-full items-center justify-center">
+				<span class="loading loading-dots loading-md"></span>
 			</div>
 		{/if}
 		{#if liveInfo}
@@ -286,7 +266,7 @@
 						</div>
 						<div class="pt-8">
 							<div class="grid grid-cols-2 gap-8">
-								<select bind:value={stream.url} class="select select-info w-full">
+								<select bind:value={stream_url} class="select select-info w-full">
 									{#each liveInfo.streams as item}
 										<option value={item.url}
 											>{item.protocol + ' ' + getResolutionName(item.resolution)}</option

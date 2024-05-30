@@ -3,7 +3,7 @@ use async_trait::async_trait;
 
 use crate::{
     model::{LiveInfo, PlatformKind},
-    platform::{Douyin, Huya, Xiaohongshu},
+    platform::{Douyin, Huya, Tiktok, Xiaohongshu},
 };
 
 // 录制器 trait
@@ -24,6 +24,7 @@ pub fn get_platform_impl(url: &str) -> Result<Box<dyn Recorder + Send + Sync>> {
         PlatformKind::Douyin => Ok(Box::new(Douyin::new())),
         PlatformKind::Xiaohongshu => Ok(Box::new(Xiaohongshu::new())),
         PlatformKind::Huya => Ok(Box::new(Huya::new())),
+        PlatformKind::Tiktok => Ok(Box::new(Tiktok::new())),
         _ => Err(anyhow::anyhow!("Unknown platform: {}", url)),
     }
 }

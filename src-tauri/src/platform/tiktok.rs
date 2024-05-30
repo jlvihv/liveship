@@ -29,21 +29,42 @@ impl Recorder for Tiktok {
         let live_room = json
             .pointer("/LiveRoom/liveRoomUserInfo")
             .ok_or_else(|| anyhow::anyhow!("live room user info not found"))?;
+        let room_cover = live_room
+            .pointer("/liveRoom/coverUrl")
+            .map(|v| v.as_str().unwrap_or(""))
+            .unwrap_or("");
+        let viewer_count = live_room
+            .pointer("/liveRoom/liveRoomStats/userCount")
+            .map(|v| v.as_u64().unwrap_or(0))
+            .unwrap_or(0)
+            .to_string();
+        let title = live_room
+            .pointer("/liveRoom/title")
+            .map(|v| v.as_str().unwrap_or(""))
+            .unwrap_or("");
+
         let user = live_room
             .get("user")
             .ok_or_else(|| anyhow::anyhow!("user not found"))?
             .as_object()
             .ok_or_else(|| anyhow::anyhow!("user is not an object"))?;
-        let anchor_name = user
+
+        let nickname = user
             .get("nickname")
-            .ok_or_else(|| anyhow::anyhow!("nickname not found"))?
-            .as_str()
-            .ok_or_else(|| anyhow::anyhow!("nickname is not a string"))?;
+            .map(|v| v.as_str().unwrap_or(""))
+            .unwrap_or("");
+        let unique_id = user
+            .get("uniqueId")
+            .map(|v| v.as_str().unwrap_or(""))
+            .unwrap_or("");
+        let anchor_name = format!("{}({})", nickname, unique_id);
+        let anchor_avatar = user
+            .get("avatarThumb")
+            .map(|v| v.as_str().unwrap_or(""))
+            .unwrap_or("");
         let status = user
             .get("status")
             .ok_or_else(|| anyhow::anyhow!("status not found"))?
-            .as_number()
-            .ok_or_else(|| anyhow::anyhow!("status is not a number"))?
             .as_u64()
             .ok_or_else(|| anyhow::anyhow!("status is not an integer"))?;
         // status 2 表示正在直播
@@ -62,42 +83,73 @@ impl Recorder for Tiktok {
             let mut streams = Vec::new();
             // 遍历这个对象的所有键值对
             for (key, value) in stream_data.iter() {
-                println!("key: {}, value: {}", key, value);
-                let stream = Stream {
-                    url: value
-                        .pointer("/main/flv")
-                        .ok_or_else(|| anyhow::anyhow!("flv not found"))?
-                        .as_str()
-                        .ok_or_else(|| anyhow::anyhow!("flv is not a string"))?
-                        .into(),
-                    resolution: key.into(),
-                    protocol: StreamingProtocol::Flv,
-                };
-                streams.push(stream);
+                let flv_url: String = value
+                    .pointer("/main/flv")
+                    .ok_or_else(|| anyhow::anyhow!("flv not found"))?
+                    .as_str()
+                    .ok_or_else(|| anyhow::anyhow!("flv is not a string"))?
+                    .into();
+                if !flv_url.is_empty() {
+                    let stream = Stream {
+                        url: flv_url.replace("https://", "http://"),
+                        resolution: key.into(),
+                        protocol: StreamingProtocol::Flv,
+                    };
+                    streams.push(stream);
+                }
+                let hls_url: String = value
+                    .pointer("/main/hls")
+                    .ok_or_else(|| anyhow::anyhow!("hls not found"))?
+                    .as_str()
+                    .ok_or_else(|| anyhow::anyhow!("hls is not a string"))?
+                    .into();
+                if !hls_url.is_empty() {
+                    let stream = Stream {
+                        url: hls_url.replace("https://", "http://"),
+                        resolution: key.into(),
+                        protocol: StreamingProtocol::Hls,
+                    };
+                    streams.push(stream);
+                }
             }
             let live_info = LiveInfo {
                 url: url.into(),
                 anchor_name: anchor_name.into(),
-                anchor_avatar: "".into(),
-                title: "".into(),
-                viewer_count: "".into(),
-                room_cover: "".into(),
-                platform_kind: PlatformKind::Tiktok,
+                anchor_avatar: anchor_avatar.into(),
+                title: title.into(),
+                viewer_count,
+                room_cover: room_cover.into(),
+                platform_kind: self.kind(),
                 status: LiveStatus::Live,
                 streams,
             };
+            Ok(live_info)
+        } else {
+            let live_info = LiveInfo {
+                url: url.into(),
+                anchor_name: anchor_name.into(),
+                anchor_avatar: anchor_avatar.into(),
+                title: title.into(),
+                viewer_count,
+                room_cover: room_cover.into(),
+                platform_kind: PlatformKind::Tiktok,
+                status: LiveStatus::NotLive,
+                streams: vec![],
+            };
+            Ok(live_info)
         }
-        // println!("user: {:#?}", user);
-
-        todo!()
     }
 
     fn kind(&self) -> PlatformKind {
-        PlatformKind::Bilibili
+        PlatformKind::Tiktok
     }
 }
 
 impl Tiktok {
+    pub fn new() -> Self {
+        Self
+    }
+
     fn headers() -> Result<HeaderMap> {
         let mut headers = HeaderMap::new();
         headers.insert(
@@ -117,9 +169,11 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_get_stream_info() {
+    async fn test_get_stream_info_for_tiktok() {
         // let url = "https://www.tiktok.com/@rumteenoladi/live";
-        let url = "https://www.tiktok.com/@yermaaddd/live";
-        let json_data = Tiktok.get_live_info(url).await.unwrap();
+        // let url = "https://www.tiktok.com/@yermaaddd/live";
+        // let url = "https://www.tiktok.com/@basiljulia11/live";
+        let url = "https://www.tiktok.com/@qian._.0323/live";
+        let _live_info = Tiktok.get_live_info(url).await.unwrap();
     }
 }

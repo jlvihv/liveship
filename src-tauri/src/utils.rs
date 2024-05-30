@@ -22,7 +22,11 @@ pub async fn generate_path(platform_kind: &PlatformKind, anchor_name: &str) -> R
     let anchor_name = anchor_name
         .chars()
         .filter(|c| c.is_alphanumeric())
-        .collect::<String>();
+        .collect::<String>()
+        // 去掉所有的 . / 以及 \，避免路径问题
+        .replace(".", "")
+        .replace("/", "")
+        .replace("\\", "");
     let full_path = path.join(platform_name).join(anchor_name);
     Ok(full_path
         .to_str()

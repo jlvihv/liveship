@@ -37,15 +37,25 @@ export function throttle<F extends (...args: any[]) => any>(
 export function getResolutionName(resolution: string) {
 	switch (resolution.toLowerCase()) {
 		case 'full_hd1':
+		case 'origin':
 			return '原画';
 		case 'hd1':
+		case 'uhd':
+		case 'hd':
 			return '超清';
+		case 'hd-60':
+			return '超清60帧';
 		case 'sd1':
 			return '高清';
 		case 'sd2':
+		case 'sd':
 			return '标清';
+		case 'ld':
+			return '流畅';
 		case 'default':
 			return '默认';
+		case 'ao':
+			return '仅音频';
 		default:
 			return resolution;
 	}
@@ -88,7 +98,9 @@ export function getPlatformIcon(platformKind: string): string {
 			return 'https://m.twitch.tv/favicon.ico?desktop-redirect=true';
 		case 'youtube':
 			return 'https://m.youtube.com/static/apple-touch-icon-72x72-precomposed.png';
+		case 'tiktok':
+			return 'https://www.tiktok.com/favicon.ico';
 		default:
-			return 'unknown';
+			return 'https://www.google.com/favicon.ico';
 	}
 }
