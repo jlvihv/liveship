@@ -78,6 +78,11 @@ impl Recorder for Tiktok {
             let live_info = LiveInfo {
                 url: url.into(),
                 anchor_name: anchor_name.into(),
+                anchor_avatar: "".into(),
+                title: "".into(),
+                viewer_count: "".into(),
+                room_cover: "".into(),
+                platform_kind: PlatformKind::Tiktok,
                 status: LiveStatus::Live,
                 streams,
             };
