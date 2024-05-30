@@ -53,6 +53,7 @@
 			return;
 		}
 		requesting = true;
+		isRotating = true;
 		// 取消之前的 setTimeout
 		if (refreshTimeout) {
 			clearTimeout(refreshTimeout);
@@ -61,12 +62,10 @@
 			isRotating = false;
 		}, 2000);
 		refreshCount++;
-		isRotating = true;
 		errorMessage = '';
 		liveInfo = undefined;
 		invoke('live_info', { url: url })
 			.then((data) => {
-				requesting = false;
 				liveInfo = data as LiveInfo;
 				if (liveInfo.streams.length > 0) {
 					stream_url = liveInfo.streams[0].url;
@@ -84,6 +83,10 @@
 			.catch((err) => {
 				errorMessage = err;
 				console.error(err);
+			})
+			.finally(() => {
+				requesting = false;
+				isRotating = false;
 			});
 	}
 
@@ -101,8 +104,10 @@
 				toast.error('添加计划失败', {
 					description: err
 				});
+			})
+			.finally(() => {
+				loading = false;
 			});
-		loading = false;
 	}
 
 	async function startRecord(url: string) {
@@ -131,8 +136,10 @@
 				toast.error('开始录制失败', {
 					description: err
 				});
+			})
+			.finally(() => {
+				loading = false;
 			});
-		loading = false;
 	}
 
 	async function stopRecord(url: string) {

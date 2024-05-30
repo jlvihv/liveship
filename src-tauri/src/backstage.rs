@@ -142,7 +142,7 @@ pub async fn check_plans() {
             continue;
         }
         // 创建录制任务
-        let _ = manager::inner::start_record_default(&plan.url)
+        let _ = manager::inner::start_record_with_plan(&plan)
             .await
             .map_err(|e| {
                 eprintln!("check_plans start record error: {}", e);

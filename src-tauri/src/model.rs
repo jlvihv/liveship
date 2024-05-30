@@ -52,7 +52,7 @@ pub struct Stream {
     pub protocol: StreamingProtocol,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub enum StreamingProtocol {
     Flv,
     Hls,

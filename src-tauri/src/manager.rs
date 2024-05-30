@@ -19,6 +19,7 @@ pub static TASKS: Lazy<DashMap<String, Child>> = Lazy::new(|| DashMap::new());
 pub mod inner {
     use super::*;
 
+    #[allow(unused)]
     pub async fn start_record_default(room_url: &str) -> anyhow::Result<()> {
         // 如果已经在录制了，就不再录制，返回错误
         if inner::get_record_status(room_url).await? == RecordStatus::Recording {
@@ -58,6 +59,68 @@ pub mod inner {
 
         // 记录录制历史
         let history = RecordingHistory::new(room_url, full_filename);
+        kv::history::add(&history).unwrap_or_else(|e| {
+            eprintln!("Could not add recording history: {}", e);
+        });
+
+        Ok(())
+    }
+
+    /// 以计划录制
+    pub async fn start_record_with_plan(plan: &RecordingPlan) -> anyhow::Result<()> {
+        // 如果已经在录制了，就不再录制，返回错误
+        if inner::get_record_status(&plan.url).await? == RecordStatus::Recording {
+            return Err(anyhow::anyhow!("Already recording"));
+        }
+        println!("尝试以计划录制：{}", plan.url);
+        let platform_impl = recorder::get_platform_impl(&plan.url)?;
+        let live_info = platform_impl.get_live_info(&plan.url).await?;
+        // 如果不在播，就不录制
+        if live_info.status == LiveStatus::NotLive {
+            return Err(anyhow::anyhow!("该主播不在播"));
+        }
+        // 如果没有流信息，就不录制
+        if live_info.streams.is_empty() {
+            return Err(anyhow::anyhow!(
+                "No stream found in live info: {:?}",
+                live_info
+            ));
+        }
+        // 保存直播信息
+        kv::live::add(&live_info).unwrap_or_else(|e| {
+            eprintln!("Could not add live info: {}", e);
+        });
+        // 找到计划中对应的分别率和协议的流，如果找不到，则使用第一个流
+        let stream = live_info
+            .streams
+            .iter()
+            .find(|s| s.resolution == plan.stream_resolution && s.protocol == plan.stream_protocol)
+            .unwrap_or_else(|| {
+                println!(
+                    "Could not find stream with resolution and protocol: {:?}, using the first stream instead.",
+                    plan
+                );
+                live_info.streams.first().unwrap()
+            });
+        let (path, filename) =
+            utils::generate_path_and_filename(&platform_impl.kind(), &live_info.anchor_name)
+                .await?;
+        // 如果路径不存在，则创建
+        if !std::path::Path::new(&path).exists() {
+            std::fs::create_dir_all(&path)?;
+        }
+
+        // 使用系统提供的函数拼接路径和文件名
+        let path = PathBuf::from(path);
+        let full_filename = path.join(filename);
+        let full_filename = full_filename
+            .to_str()
+            .ok_or_else(|| anyhow::anyhow!("Could not convert path to string: {:?}", path))?;
+
+        inner::record_with_ffmpeg(&plan.url, &stream.url, full_filename).await?;
+
+        // 记录录制历史
+        let history = RecordingHistory::new(&plan.url, full_filename);
         kv::history::add(&history).unwrap_or_else(|e| {
             eprintln!("Could not add recording history: {}", e);
         });
