@@ -1,5 +1,9 @@
+use anyhow::anyhow;
 pub use anyhow::Result;
+use ffmpeg_sidecar::download::{download_ffmpeg_package, ffmpeg_download_url, unpack_ffmpeg};
 use std::process::{Child, Stdio};
+
+use crate::config::config_dir;
 
 pub fn record(ffmpeg_path: &str, url: &str, filename: &str) -> Result<Child> {
     println!("开始录制：{} -> {}", url, filename);
@@ -80,13 +84,23 @@ fn build_ffmpeg_command(url: &str, filename: &str) -> Vec<String> {
     ffmpeg_command.into_iter().map(|s| s.into()).collect()
 }
 
-/// 检查 ffmpeg 是否可用，返回 ffmpeg 版本号
-pub fn check_ffmpeg(ffmpeg_path: &str) -> Result<String> {
-    let output = std::process::Command::new(ffmpeg_path)
-        .arg("-version")
-        .output()?;
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    Ok(stdout.to_string())
+/// 自动下载对应平台的 ffmpeg
+pub fn download_ffmpeg() -> Result<String> {
+    let download_url = ffmpeg_download_url()?;
+    let config_dir = config_dir()?;
+    let archive_path = download_ffmpeg_package(download_url, &config_dir)?;
+    // 解压
+    unpack_ffmpeg(&archive_path, &config_dir)?;
+    let ffmpeg_path = if cfg!(target_os = "windows") {
+        config_dir.join("ffmpeg.exe")
+    } else {
+        config_dir.join("ffmpeg")
+    };
+    let ffmpeg_path = ffmpeg_path
+        .to_str()
+        .ok_or_else(|| anyhow!("can not convert PathBuf to String"))?
+        .to_string();
+    Ok(ffmpeg_path)
 }
 
 #[cfg(test)]
@@ -103,5 +117,11 @@ mod tests {
         let stderr = String::from_utf8_lossy(&output.stderr);
         println!("stdout: {}", stdout);
         println!("stderr: {}", stderr);
+    }
+
+    #[test]
+    fn test_download_ffmpeg() {
+        let ffmpeg_path = download_ffmpeg().unwrap();
+        println!("ffmpeg_path: {}", ffmpeg_path);
     }
 }

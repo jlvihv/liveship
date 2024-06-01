@@ -53,15 +53,9 @@
 		if (timeoutId) {
 			clearTimeout(timeoutId);
 		}
-		invoke('check_ffmpeg', { path })
+		invoke('check_ffmpeg_version', { path })
 			.then((data) => {
-				// 以空格分割，取第三个元素
-				let arr = (data as string).split(' ');
-				if (arr.length < 3) {
-					ffmpegVersion = '';
-				} else {
-					ffmpegVersion = arr[2];
-				}
+				ffmpegVersion = data as string;
 				toast.success('FFmpeg 路径可用');
 				timeoutId = setTimeout(() => {
 					ffmpegVersion = '';

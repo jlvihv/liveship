@@ -4,15 +4,8 @@
 	import { closeDialog, openDialog, debounce, getResolutionName } from '$lib/utils';
 	import { onMount } from 'svelte';
 	import { invoke } from '@tauri-apps/api/core';
-	import {
-		LiveStatus,
-		RecordingStatus,
-		StreamingProtocol,
-		type LiveInfo,
-		type Stream
-	} from '$lib/model';
+	import { LiveStatus, RecordingStatus, type LiveInfo, type Stream } from '$lib/model';
 
-	const stopRecordDialogId = 'stopRecord';
 	let url = $state('');
 	// 用一个变量来表示是否正在请求
 	let requesting = $state(false);
@@ -28,6 +21,8 @@
 	let isFirst = $state(false);
 	let stream_url = $state('');
 	let refreshCount = $state(0);
+	const stopRecordDialogId = 'stopRecord';
+	const downloadFfmpegDialogId = 'downloadFfmpeg';
 
 	onMount(() => {
 		// 从 localStorage 中获取 isFrist
@@ -39,6 +34,19 @@
 				isFirst = false;
 				localStorage.setItem('isFirst', 'false');
 			}, 60000);
+		}
+
+		// 由于这是用户面对的第一个页面，我们可以在这里检测用户有没有安装 ffmpeg，如果没有安装的话，弹出对话框，让用户选择是否自动安装
+		// 从 localStorage 中获取 ffmpegDownloading，如果正在下载中，就不用管了
+		let downloading = localStorage.getItem('ffmpegDownloading');
+		if (downloading !== 'true') {
+			invoke('check_ffmpeg_availability')
+				.then((_data) => {
+					// 如果已经安装了 ffmpeg，就不用管了
+				})
+				.catch((err) => {
+					openDialog(downloadFfmpegDialogId);
+				});
 		}
 	});
 
@@ -158,19 +166,53 @@
 				toast.error('停止录制失败', {
 					description: err
 				});
+			})
+			.finally(() => {
+				loading = false;
 			});
-		loading = false;
+	}
+
+	async function ffmpegAutoDownload() {
+		closeDialog(downloadFfmpegDialogId);
+		toast.info('下载中，请稍等');
+		// 写入 localStorage，表示正在下载中
+		localStorage.setItem('ffmpegDownloading', 'true');
+		invoke('download_ffmpeg')
+			.then((data) => {
+				toast.success('已为您下载并设置好 ffmpeg 了');
+			})
+			.catch((err) => {
+				toast.error('下载 ffmpeg 失败', {
+					description: err
+				});
+			})
+			.finally(() => {
+				// 下载完成后，删除 localStorage 中的 ffmpegDownloading
+				localStorage.removeItem('ffmpegDownloading');
+			});
 	}
 </script>
 
 <!-- 原生对话框 -->
 <Dialog text="确定停止录制吗？" id={stopRecordDialogId}>
 	<button
+		class="btn w-24"
 		onclick={() => {
 			closeDialog(stopRecordDialogId);
 		}}>取消</button
 	>
 	<button onclick={() => stopRecord(url)}>确定</button>
+</Dialog>
+
+<!-- 询问是否自动安装 ffmpeg -->
+<Dialog text="您可能没有安装 ffmpeg，是否为您自动安装？" id={downloadFfmpegDialogId}>
+	<button
+		class="btn w-24"
+		onclick={() => {
+			closeDialog(downloadFfmpegDialogId);
+		}}>不</button
+	>
+	<button class="btn btn-primary w-24" onclick={() => ffmpegAutoDownload()}>自动安装</button>
 </Dialog>
 
 <!-- 一个输入框，每次改变都调用后端方法 -->

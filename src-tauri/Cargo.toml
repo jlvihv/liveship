@@ -1,8 +1,9 @@
 [package]
 name = "liveship"
-version = "0.0.0"
-description = "A Tauri App"
-authors = ["you"]
+version = "0.1.8"
+description = "liveship 是一个直播录制工具，目前已支持抖音、虎牙、tiktok"
+authors = ["jlvihv"]
+email = "imvihv@gmail.com"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -36,6 +37,7 @@ strum = { version = "0.26", features = ["derive"] }
 tokio = { version = "1.37", features = ["rt-multi-thread", "macros"] }
 urlencoding = "2.1"
 showfile = "0.1"
+ffmpeg-sidecar = "1.1"
 
 [profile.release]
 strip = true

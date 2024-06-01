@@ -1,6 +1,7 @@
 use tauri::{AppHandle, Manager};
 
 pub mod backstage;
+mod config;
 mod ffmpeg;
 pub mod kv;
 mod manager;
@@ -44,7 +45,9 @@ pub fn run() {
             manager::config::get_config,
             manager::config::set_config,
             manager::live::live_info,
-            manager::ffmpeg_api::check_ffmpeg,
+            manager::ffmpeg_api::check_ffmpeg_version,
+            manager::ffmpeg_api::check_ffmpeg_availability,
+            manager::ffmpeg_api::download_ffmpeg,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

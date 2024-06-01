@@ -1,6 +1,4 @@
 <script lang="ts">
-	// icon fluent 28
-
 	import { RecordingStatus, type RecordingHistory } from '$lib/model';
 	import { onDestroy, onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
@@ -12,6 +10,8 @@
 	import { invoke } from '@tauri-apps/api/core';
 	dayjs.extend(relativeTime);
 	dayjs.locale('zh-cn');
+
+	// icon fluent 28
 
 	let stopRecordDialogId = 'stopRecord';
 	let deleteHistoryDialogId = 'deleteHistory';

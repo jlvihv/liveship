@@ -8,6 +8,7 @@ use crate::{
 };
 use chrono::Utc;
 use dashmap::DashMap;
+use ffmpeg_sidecar::version::ffmpeg_version_with_path;
 use once_cell::sync::Lazy;
 use std::result::Result;
 use std::{path::PathBuf, process::Child};
@@ -445,9 +446,29 @@ pub mod ffmpeg_api {
 
     /// 检查 ffmpeg
     #[tauri::command]
-    pub fn check_ffmpeg(path: &str) -> Result<String, String> {
+    pub fn check_ffmpeg_version(path: &str) -> Result<String, String> {
         let version =
-            ffmpeg::check_ffmpeg(path).map_err(|e| format!("Could not check ffmpeg: {}", e))?;
+            ffmpeg_version_with_path(path).map_err(|e| format!("Could not check ffmpeg: {}", e))?;
         Ok(version)
+    }
+
+    /// 检查 ffmpeg 可用性
+    #[tauri::command]
+    pub fn check_ffmpeg_availability() -> Result<String, String> {
+        let config = kv::config::get().map_err(|e| format!("Could not get config: {}", e))?;
+        let ffmpeg_path = config.ffmpeg_path;
+        check_ffmpeg_version(&ffmpeg_path)
+    }
+
+    /// 自动下载 ffmpeg
+    #[tauri::command]
+    pub async fn download_ffmpeg() -> Result<String, String> {
+        let path =
+            ffmpeg::download_ffmpeg().map_err(|e| format!("Could not download ffmpeg: {}", e))?;
+        // 更新配置
+        let mut config = kv::config::get().map_err(|e| format!("Could not get config: {}", e))?;
+        config.ffmpeg_path = path.clone();
+        kv::config::set(&config).map_err(|e| format!("Could not set config: {}", e))?;
+        Ok(path)
     }
 }

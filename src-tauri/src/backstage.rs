@@ -17,7 +17,7 @@ pub fn init_with_new_thread() {
 }
 
 // 后台任务
-pub async fn init() {
+async fn init() {
     tokio::time::sleep(Duration::from_secs(1)).await;
     println!("后台检查任务已运行");
     check_recording_histories().await;

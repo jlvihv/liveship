@@ -1,3 +1,4 @@
+use crate::config::config_dir;
 use crate::model::AppConfig;
 use crate::model::LiveInfo;
 use crate::model::RecordingHistory;
@@ -11,12 +12,7 @@ static INSTANCE: OnceCell<Database> = OnceCell::new();
 const TABLE: TableDefinition<&str, &[u8]> = TableDefinition::new("liveship");
 
 pub fn init() -> Result<()> {
-    // 如果不存在则创建配置文件路径，位于家目录下的 .config/liveship
-    let config_dir = dirs::config_dir().unwrap().join("liveship");
-    if !config_dir.exists() {
-        std::fs::create_dir_all(&config_dir)?;
-    }
-    let path = config_dir.join("liveship.db");
+    let path = config_dir()?.join("liveship.db");
     let db = Database::create(path)?;
     let write_txn = db.begin_write()?;
     {
