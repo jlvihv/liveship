@@ -10,7 +10,6 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { t } from '@/translations';
 	dayjs.extend(relativeTime);
-	dayjs.locale('zh-cn');
 
 	// icon fluent 28
 
@@ -27,6 +26,14 @@
 		// 先获取一次，每隔两秒，再获取一次录制历史
 		await getAllHistory();
 		intervalId = setInterval(getAllHistory, 2000);
+
+		// 从 localStorage 中获取 lang，设置 dayjs 的语言
+		const lang = localStorage.getItem('lang');
+		if (lang) {
+			if (lang === 'cn') {
+				dayjs.locale('zh-cn');
+			}
+		}
 	});
 
 	// 组件销毁时，清除定时器
