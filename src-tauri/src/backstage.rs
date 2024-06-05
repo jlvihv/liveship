@@ -1,8 +1,4 @@
-use crate::{
-    kv,
-    manager::{self, TASKS},
-    model::RecordStatus,
-};
+use crate::{kv, manager::TASKS, model::RecordStatus};
 use std::time::Duration;
 
 // 在新线程中初始化
@@ -22,7 +18,6 @@ async fn init() {
     println!("后台检查任务已运行");
     check_recording_histories().await;
     tokio::spawn(check_tasks_loop());
-    tokio::spawn(check_plans_loop());
     // 无限循环阻塞
     loop {
         tokio::time::sleep(Duration::from_secs(60)).await;
@@ -30,6 +25,7 @@ async fn init() {
 }
 
 // 查看数据库中，状态为正在录制的任务，是否真的还在录制，如果不是，就更新数据库记录
+// 用于在程序意外退出后，再次启动时，检查是否有任务未正常结束
 pub async fn check_recording_histories() {
     let histories = kv::history::get_all().unwrap_or_else(|e| {
         eprintln!("get_recording_histories error: {}", e);
@@ -60,18 +56,6 @@ pub async fn check_tasks_loop() {
         let _ = check_tasks()
             .await
             .map_err(|e| eprintln!("check_tasks error: {}", e));
-    }
-}
-
-/// 在循环中，轮询查看录制计划中的直播是否开始
-pub async fn check_plans_loop() {
-    loop {
-        check_plans().await;
-        // 获取轮询间隔
-        let interval = kv::config::get()
-            .map(|config| config.live_info_check_interval)
-            .unwrap_or(10);
-        tokio::time::sleep(Duration::from_secs(interval as u64)).await;
     }
 }
 
@@ -121,31 +105,4 @@ pub async fn check_tasks() -> anyhow::Result<()> {
         });
     }
     Ok(())
-}
-
-pub async fn check_plans() {
-    // 首先记录当前检查时间
-    kv::plan::mark_polling_time().unwrap_or_else(|e| {
-        eprintln!("mark_polling_time error: {}", e);
-    });
-    // 从数据库中获取所有录制计划
-    let plans = kv::plan::get_enabled().unwrap_or_else(|e| {
-        eprintln!("get_enabled_recording_plans error: {}", e);
-        vec![]
-    });
-    if plans.is_empty() {
-        return;
-    }
-    for plan in plans {
-        // 如果任务已经在 TASKS 中，就跳过
-        if TASKS.contains_key(&plan.url) {
-            continue;
-        }
-        // 创建录制任务
-        let _ = manager::inner::start_record_with_plan(&plan)
-            .await
-            .map_err(|e| {
-                eprintln!("check_plans start record error: {}", e);
-            });
-    }
 }

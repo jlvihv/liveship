@@ -125,6 +125,7 @@ pub enum PlatformKind {
     Bilibili,
     Huya,
     Kuaishou,
+    Douyu,
     Unknown,
 }
 

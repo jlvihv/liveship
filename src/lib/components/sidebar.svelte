@@ -1,12 +1,13 @@
 <script>
+	import { t } from '@/translations';
 	import { Toaster } from 'svelte-sonner';
 
 	let { currentPath = $bindable('new') } = $props();
 	let list = [
-		{ label: '新增录制', icon: 'home', href: 'new' },
-		{ label: '录制历史', icon: 'list', href: 'list' },
-		{ label: '录制计划', icon: 'calendar', href: 'plan' },
-		{ label: '程序设置', icon: 'calendar', href: 'config' }
+		{ label: $t('addRecord'), icon: 'home', href: 'new' },
+		{ label: $t('recordHistory'), icon: 'list', href: 'list' },
+		{ label: $t('recordPlan'), icon: 'calendar', href: 'plan' },
+		{ label: $t('settings'), icon: 'calendar', href: 'config' }
 	];
 </script>
 

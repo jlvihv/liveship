@@ -7,7 +7,18 @@ export interface LiveInfo {
 	viewerCount: string;
 	roomCover: string;
 	streams: Array<Stream>;
-	platformKind: string;
+	platformKind: PlatformKind;
+}
+
+export enum PlatformKind {
+	Douyin = 'Douyin',
+	Tiktok = 'Tiktok',
+	Xiaohongshu = 'Xiaohongshu',
+	Huya = 'Huya',
+	Douyu = 'Douyu',
+	Kuaishou = 'Kuaishou',
+	Bilibili = 'Bilibili',
+	Unknown = 'Unknown'
 }
 
 export interface Stream {

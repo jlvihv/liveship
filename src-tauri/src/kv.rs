@@ -124,7 +124,9 @@ pub mod plan {
             let mut plan: RecordingPlan = serde_json::from_slice(&plan.value())?;
             if plan.enabled {
                 // 获取直播间信息
-                plan.live_info = super::live::get(&plan.url)?;
+                if plan.live_info.is_none() {
+                    plan.live_info = super::live::get(&plan.url)?;
+                }
                 plans.push(plan);
             }
         }

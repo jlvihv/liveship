@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { fade } from 'svelte/transition';
 	import type { AppConfig } from '$lib/model';
-	import { onMount, tick } from 'svelte';
+	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { invoke } from '@tauri-apps/api/core';
+	import { t } from '@/translations';
 
 	let config: AppConfig | undefined = $state();
 	let rawConfig: AppConfig | undefined = $state();
@@ -12,10 +13,19 @@
 	});
 	let ffmpegVersion = $state('');
 	let timeoutId: number | undefined = $state();
+	let language = $state('en');
 
 	onMount(async () => {
+		// 获取保存在 localStorage 中的语言设置
+		language = localStorage.getItem('lang') || 'en';
 		await getConfig();
 	});
+
+	// 改变语言，并保存到 localStorage
+	async function changeLanguage(lang: string) {
+		localStorage.setItem('lang', lang);
+		location.reload();
+	}
 
 	// 当 config.ffmepgPath 改变时，清空 ffmpegVersion
 	function handleFfmpegPathChange() {
@@ -29,7 +39,7 @@
 				config = JSON.parse(JSON.stringify(rawConfig));
 			})
 			.catch((e) =>
-				toast.error('获取配置失败', {
+				toast.error($t('getSettingsFailed'), {
 					description: e
 				})
 			);
@@ -38,11 +48,11 @@
 	async function setConfig() {
 		invoke('set_config', { config })
 			.then(() => {
-				toast.success('保存成功');
+				toast.success($t('saveSuccess'));
 				rawConfig = JSON.parse(JSON.stringify(config));
 			})
 			.catch((e) =>
-				toast.error('保存失败', {
+				toast.error($t('saveFailed'), {
 					description: e
 				})
 			);
@@ -56,13 +66,13 @@
 		invoke('check_ffmpeg_version', { path })
 			.then((data) => {
 				ffmpegVersion = data as string;
-				toast.success('FFmpeg 路径可用');
+				toast.success($t('ffmpegPathAvailable'));
 				timeoutId = setTimeout(() => {
 					ffmpegVersion = '';
 				}, 10000);
 			})
 			.catch((err) => {
-				toast.error('FFmpeg 路径不可用', {
+				toast.error($t('ffmpegPathUnavailable'), {
 					description: err
 				});
 			});
@@ -71,12 +81,23 @@
 
 {#if config}
 	<div class="grid gap-8 p-8 text-gray-400">
+		<label class="flex items-center gap-8">
+			{$t('language')}
+			<select
+				bind:value={language}
+				class="select min-w-32 text-gray-700 dark:text-gray-200"
+				onchange={() => changeLanguage(language)}
+			>
+				<option value="en">English</option>
+				<option value="cn">中文</option>
+			</select>
+		</label>
 		<label class="input input-bordered flex items-center gap-8">
-			ffmpeg 路径
+			{$t('ffmpegPath')}
 			<input
 				type="text"
 				class="grow text-gray-700 dark:text-gray-200"
-				placeholder=""
+				placeholder={$t('ffmpegPathPlaceholder')}
 				bind:value={config.ffmpegPath}
 				oninput={handleFfmpegPathChange}
 			/>
@@ -85,11 +106,11 @@
 			{/if}
 			<button onclick={() => {
 					checkFFmpeg(config!.ffmpegPath);
-				}}>检查</button>
+				}}>{$t('check')}</button>
 		</label>
 
 		<label class="input input-bordered flex items-center gap-8">
-			文件保存路径
+			{$t('savePath')}
 			<input
 				type="text"
 				class="grow text-gray-700 dark:text-gray-200"
@@ -99,7 +120,7 @@
 		</label>
 
 		<label class="input input-bordered flex items-center gap-8">
-			开播信息轮询间隔 (单位秒)
+			{$t('pollInterval')}
 			<input
 				type="number"
 				class="grow text-gray-700 dark:text-gray-200"
@@ -112,10 +133,10 @@
 			{#if changed}
 				<button
 					class="btn btn-wide dark:bg-gray-400 dark:text-gray-800"
-					onclick={() => (config = JSON.parse(JSON.stringify(rawConfig)))}>取消</button
+					onclick={() => (config = JSON.parse(JSON.stringify(rawConfig)))}>{$t('cancel')}</button
 				>
 				<button class="btn btn-primary btn-wide" onclick={async () => await setConfig()}
-					>保存</button
+					>{$t('save')}</button
 				>
 			{/if}
 		</div>

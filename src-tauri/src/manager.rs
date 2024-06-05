@@ -3,8 +3,8 @@ use crate::model::LiveInfo;
 use crate::model::{PlatformKind, Stream};
 use crate::{
     ffmpeg, kv,
-    model::{LiveStatus, RecordStatus, RecordingHistory, RecordingPlan},
-    recorder, utils,
+    model::{RecordStatus, RecordingHistory, RecordingPlan},
+    utils,
 };
 use chrono::Utc;
 use dashmap::DashMap;
@@ -19,115 +19,6 @@ pub static TASKS: Lazy<DashMap<String, Child>> = Lazy::new(|| DashMap::new());
 /// 内部方法，不对外暴露
 pub mod inner {
     use super::*;
-
-    #[allow(unused)]
-    pub async fn start_record_default(room_url: &str) -> anyhow::Result<()> {
-        // 如果已经在录制了，就不再录制，返回错误
-        if inner::get_record_status(room_url).await? == RecordStatus::Recording {
-            return Err(anyhow::anyhow!("Already recording"));
-        }
-        println!("开始以默认录制：{}", room_url);
-        let platform_impl = recorder::get_platform_impl(room_url)?;
-        let live_info = platform_impl.get_live_info(room_url).await?;
-        // 保存直播信息
-        kv::live::add(&live_info).unwrap_or_else(|e| {
-            eprintln!("Could not add live info: {}", e);
-        });
-        // 如果不在播，就不录制
-        if live_info.status == LiveStatus::NotLive {
-            return Err(anyhow::anyhow!("该主播不在播"));
-        }
-        let stream = live_info
-            .streams
-            .first()
-            .ok_or_else(|| anyhow::anyhow!("No stream found in live info: {:?}", live_info))?;
-        let (path, filename) =
-            utils::generate_path_and_filename(&platform_impl.kind(), &live_info.anchor_name)
-                .await?;
-        // 如果路径不存在，则创建
-        if !std::path::Path::new(&path).exists() {
-            std::fs::create_dir_all(&path)?;
-        }
-
-        // 使用系统提供的函数拼接路径和文件名
-        let path = PathBuf::from(path);
-        let full_filename = path.join(filename);
-        let full_filename = full_filename
-            .to_str()
-            .ok_or_else(|| anyhow::anyhow!("Could not convert path to string: {:?}", path))?;
-
-        inner::record_with_ffmpeg(room_url, &stream.url, full_filename).await?;
-
-        // 记录录制历史
-        let history = RecordingHistory::new(room_url, full_filename);
-        kv::history::add(&history).unwrap_or_else(|e| {
-            eprintln!("Could not add recording history: {}", e);
-        });
-
-        Ok(())
-    }
-
-    /// 以计划录制
-    pub async fn start_record_with_plan(plan: &RecordingPlan) -> anyhow::Result<()> {
-        // 如果已经在录制了，就不再录制，返回错误
-        if inner::get_record_status(&plan.url).await? == RecordStatus::Recording {
-            return Err(anyhow::anyhow!("Already recording"));
-        }
-        println!("尝试以计划录制：{}", plan.url);
-        let platform_impl = recorder::get_platform_impl(&plan.url)?;
-        let live_info = platform_impl.get_live_info(&plan.url).await?;
-        // 如果不在播，就不录制
-        if live_info.status == LiveStatus::NotLive {
-            return Err(anyhow::anyhow!("该主播不在播"));
-        }
-        // 如果没有流信息，就不录制
-        if live_info.streams.is_empty() {
-            return Err(anyhow::anyhow!(
-                "No stream found in live info: {:?}",
-                live_info
-            ));
-        }
-        // 保存直播信息
-        kv::live::add(&live_info).unwrap_or_else(|e| {
-            eprintln!("Could not add live info: {}", e);
-        });
-        // 找到计划中对应的分别率和协议的流，如果找不到，则使用第一个流
-        let stream = live_info
-            .streams
-            .iter()
-            .find(|s| s.resolution == plan.stream_resolution && s.protocol == plan.stream_protocol)
-            .unwrap_or_else(|| {
-                println!(
-                    "Could not find stream with resolution and protocol: {:?}, using the first stream instead.",
-                    plan
-                );
-                live_info.streams.first().unwrap()
-            });
-        let (path, filename) =
-            utils::generate_path_and_filename(&platform_impl.kind(), &live_info.anchor_name)
-                .await?;
-        // 如果路径不存在，则创建
-        if !std::path::Path::new(&path).exists() {
-            std::fs::create_dir_all(&path)?;
-        }
-
-        // 使用系统提供的函数拼接路径和文件名
-        let path = PathBuf::from(path);
-        let full_filename = path.join(filename);
-        let full_filename = full_filename
-            .to_str()
-            .ok_or_else(|| anyhow::anyhow!("Could not convert path to string: {:?}", path))?;
-
-        inner::record_with_ffmpeg(&plan.url, &stream.url, full_filename).await?;
-
-        // 记录录制历史
-        let history = RecordingHistory::new(&plan.url, full_filename);
-        kv::history::add(&history).unwrap_or_else(|e| {
-            eprintln!("Could not add recording history: {}", e);
-        });
-
-        Ok(())
-    }
 
     /// 为 api 提供的录制方法，使用 api 传入的 stream 信息，不再获取直播间信息
     pub async fn start_record_with_stream(
@@ -361,6 +252,22 @@ pub mod plan {
         })?;
         Ok(last_polling_time)
     }
+
+    // 获取有计划，但未在录制中的任务
+    #[tauri::command]
+    pub async fn get_plans_not_recording() -> Vec<RecordingPlan> {
+        let plans = kv::plan::get_enabled().unwrap_or_else(|e| {
+            eprintln!("get_enabled_recording_plans error: {}", e);
+            vec![]
+        });
+        let mut result = vec![];
+        for plan in plans {
+            if !TASKS.contains_key(&plan.url) {
+                result.push(plan);
+            }
+        }
+        result
+    }
 }
 
 pub mod history {
@@ -425,23 +332,9 @@ pub mod config {
     }
 }
 
-pub mod live {
-    use super::*;
-
-    /// 获取直播信息
-    #[tauri::command]
-    pub async fn live_info(url: &str) -> Result<LiveInfo, String> {
-        let platform_impl = recorder::get_platform_impl(url)
-            .map_err(|e| format!("Could not get platform impl: {}", e))?;
-        let info = platform_impl
-            .get_live_info(url)
-            .await
-            .map_err(|e| format!("Could not get live info from platform impl: {}", e))?;
-        Ok(info)
-    }
-}
-
 pub mod ffmpeg_api {
+    use crate::{model::JsonMap, request};
+
     use super::*;
 
     /// 检查 ffmpeg
@@ -470,5 +363,30 @@ pub mod ffmpeg_api {
         config.ffmpeg_path = path.clone();
         kv::config::set(&config).map_err(|e| format!("Could not set config: {}", e))?;
         Ok(path)
+    }
+
+    /// 请求 url，得到 text
+    #[tauri::command]
+    pub async fn request(url: String, headers: JsonMap) -> Result<String, String> {
+        // 遍历 headers，转换成 HeaderMap
+        let headers = headers
+            .iter()
+            .map(|(k, v)| (k.as_str().into(), v.as_str().unwrap_or("").into()))
+            .collect::<Vec<(String, String)>>();
+        let mut header_map = reqwest::header::HeaderMap::new();
+        for (k, v) in headers {
+            header_map.insert(
+                reqwest::header::HeaderName::from_bytes(k.as_bytes()).map_err(|e| e.to_string())?,
+                reqwest::header::HeaderValue::from_str(&v).map_err(|e| e.to_string())?,
+            );
+        }
+
+        let resp = request::get_with_headers(&url, header_map)
+            .await
+            .map_err(|e| format!("Could not request: {}", e))?
+            .text()
+            .await
+            .map_err(|e| format!("Could not get text: {}", e))?;
+        Ok(resp)
     }
 }

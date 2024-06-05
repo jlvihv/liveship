@@ -1,10 +1,17 @@
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
 	import Dialog from './dialog.svelte';
-	import { closeDialog, openDialog, debounce, getResolutionName } from '$lib/utils';
+	import {
+		closeDialog,
+		openDialog,
+		debounce,
+		getResolutionName,
+		getLiveInfoForPlatform
+	} from '$lib/utils';
 	import { onMount } from 'svelte';
 	import { invoke } from '@tauri-apps/api/core';
 	import { LiveStatus, RecordingStatus, type LiveInfo, type Stream } from '$lib/model';
+	import { t } from '@/translations';
 
 	let url = $state('');
 	// 用一个变量来表示是否正在请求
@@ -71,45 +78,40 @@
 		}, 2000);
 		refreshCount++;
 		errorMessage = '';
-		liveInfo = undefined;
-		invoke('live_info', { url: url })
+		try {
+			liveInfo = await getLiveInfoForPlatform(url);
+		} catch (err) {
+			errorMessage = err as string;
+			return;
+		}
+		if (liveInfo.streams.length > 0) {
+			stream_url = liveInfo.streams[0].url;
+		}
+		invoke('record_status', { url })
 			.then((data) => {
-				liveInfo = data as LiveInfo;
-				if (liveInfo.streams.length > 0) {
-					stream_url = liveInfo.streams[0].url;
-				}
-				invoke('record_status', { url })
-					.then((data) => {
-						recordStatus = data as RecordingStatus;
-					})
-					.catch((err) => {
-						toast.error('获取录制状态失败', {
-							description: err
-						});
-					});
+				recordStatus = data as RecordingStatus;
 			})
 			.catch((err) => {
-				errorMessage = err;
-				console.error(err);
-			})
-			.finally(() => {
-				requesting = false;
-				isRotating = false;
+				toast.error($t('getRecordStatusFailed'), {
+					description: err
+				});
 			});
+		requesting = false;
+		isRotating = false;
 	}
 
 	async function handleAddPlan(url: string) {
 		if (url == '') {
-			toast.error('请先填写直播地址');
+			toast.error($t('pleaseInputLiveAddress'));
 			return;
 		}
 		loading = true;
 		invoke('add_plan_with_url', { url })
 			.then((data) => {
-				toast.success('已经添加计划啦');
+				toast.success($t('planAlreadyAdded'));
 			})
 			.catch((err) => {
-				toast.error('添加计划失败', {
+				toast.error($t('planAddFailed'), {
 					description: err
 				});
 			})
@@ -120,14 +122,14 @@
 
 	async function startRecord(url: string) {
 		if (url == '') {
-			toast.error('请先填写直播地址');
+			toast.error($t('pleaseInputLiveAddress'));
 			return;
 		}
 		loading = true;
 		// 从 liveInfo 中获取 stream
 		let stream: Stream | undefined = liveInfo?.streams.find((s) => s.url === stream_url);
 		if (!stream) {
-			toast.error('请先选择一个流');
+			toast.error($t('pleaseSelectStream'));
 			loading = false;
 			return;
 		}
@@ -138,10 +140,10 @@
 		})
 			.then((data) => {
 				recordStatus = data as RecordingStatus;
-				toast.success('已经开始录制啦');
+				toast.success($t('recordAlreadyStarted'));
 			})
 			.catch((err) => {
-				toast.error('开始录制失败', {
+				toast.error($t('recordStartFailed'), {
 					description: err
 				});
 			})
@@ -153,17 +155,17 @@
 	async function stopRecord(url: string) {
 		closeDialog(stopRecordDialogId);
 		if (url === '') {
-			toast.error('url 不能为空');
+			toast.error($t('urlCannotBeEmpty'));
 			return;
 		}
 		loading = true;
 		invoke('stop_record', { url })
 			.then((data) => {
 				recordStatus = data as RecordingStatus;
-				toast.success('已经停止录制啦');
+				toast.success($t('recordAlreadyStopped'));
 			})
 			.catch((err) => {
-				toast.error('停止录制失败', {
+				toast.error($t('recordStopFailed'), {
 					description: err
 				});
 			})
@@ -174,15 +176,15 @@
 
 	async function ffmpegAutoDownload() {
 		closeDialog(downloadFfmpegDialogId);
-		toast.info('下载中，请稍等');
+		toast.info($t('downloading'));
 		// 写入 localStorage，表示正在下载中
 		localStorage.setItem('ffmpegDownloading', 'true');
 		invoke('download_ffmpeg')
 			.then((data) => {
-				toast.success('已为您下载并设置好 ffmpeg 了');
+				toast.success($t('downloadedFFmpeg'));
 			})
 			.catch((err) => {
-				toast.error('下载 ffmpeg 失败', {
+				toast.error($t('downloadFFmpegFailed'), {
 					description: err
 				});
 			})
@@ -194,25 +196,27 @@
 </script>
 
 <!-- 原生对话框 -->
-<Dialog text="确定停止录制吗？" id={stopRecordDialogId}>
+<Dialog text={$t('confirmStopRecord')} id={stopRecordDialogId}>
 	<button
 		class="btn w-24"
 		onclick={() => {
 			closeDialog(stopRecordDialogId);
-		}}>取消</button
+		}}>{$t('cancel')}</button
 	>
-	<button onclick={() => stopRecord(url)}>确定</button>
+	<button class="btn btn-primary w-24" onclick={() => stopRecord(url)}>{$t('confirm')}</button>
 </Dialog>
 
 <!-- 询问是否自动安装 ffmpeg -->
-<Dialog text="您可能没有安装 ffmpeg，是否为您自动安装？" id={downloadFfmpegDialogId}>
+<Dialog text={$t('confirmInstallFFmpeg')} id={downloadFfmpegDialogId}>
 	<button
 		class="btn w-24"
 		onclick={() => {
 			closeDialog(downloadFfmpegDialogId);
-		}}>不</button
+		}}>{$t('no')}</button
 	>
-	<button class="btn btn-primary w-24" onclick={() => ffmpegAutoDownload()}>自动安装</button>
+	<button class="btn btn-primary w-24" onclick={() => ffmpegAutoDownload()}
+		>{$t('autoInstall')}</button
+	>
 </Dialog>
 
 <!-- 一个输入框，每次改变都调用后端方法 -->
@@ -226,7 +230,7 @@
 			<input
 				class="grow"
 				bind:value={url}
-				placeholder="在这里输入直播间地址"
+				placeholder={$t('inputPlaceholder')}
 				oninput={handleinput}
 			/>
 			{#if url}
@@ -273,7 +277,7 @@
 	<div class="mt-4 w-1/2 min-w-[600px]">
 		{#if isFirst}
 			<div class="py-4 text-sm text-gray-500">
-				<p>tips: 已支持抖音、虎牙、tiktok</p>
+				<p>{$t('tips')}</p>
 			</div>
 		{/if}
 		{#if requesting}
@@ -303,12 +307,12 @@
 								<b>{liveInfo.anchorName}</b>
 								<div class="flex gap-8">
 									{#if liveInfo.status === LiveStatus.Live}
-										<p class="text-green-500">正在直播</p>
+										<p class="text-green-500">{$t('living')}</p>
 									{:else}
-										<p class="text-gray-500">未直播</p>
+										<p class="text-gray-500">{$t('notLiving')}</p>
 									{/if}
 									<p>
-										{liveInfo.viewerCount ? liveInfo.viewerCount + ' 在看' : ''}
+										{liveInfo.viewerCount ? liveInfo.viewerCount + $t('watching') : ''}
 									</p>
 								</div>
 							</div>
@@ -330,7 +334,7 @@
 										id="autoRecord"
 										bind:checked={autoRecord}
 									/>
-									以后自动录制该主播</label
+									{$t('autoRecord')}</label
 								>
 							</div>
 						</div>
@@ -344,19 +348,19 @@
 									class="btn btn-error w-full"
 									onclick={() => {
 										openDialog(stopRecordDialogId);
-									}}>停止录制</button
+									}}>{$t('stopRecord')}</button
 								>
 							{:else}
 								<button class="btn btn-primary w-full" onclick={() => startRecord(url)}
-									>开始录制</button
+									>{$t('startRecord')}</button
 								>
 							{/if}
 						</div>
 					{:else}
 						<div>
-							<div>主播 {liveInfo.anchorName} 当前不在播</div>
+							<div>{$t('anchor')} {liveInfo.anchorName} {$t('notInLive')}</div>
 							<button class="btn btn-primary mt-8 w-full" onclick={() => handleAddPlan(url)}
-								>加入录制计划，主播开播后自动录制</button
+								>{$t('addPlan')}</button
 							>
 						</div>
 					{/if}
@@ -367,7 +371,7 @@
 			<div class="text-red-500">{errorMessage}</div>
 			{#if refreshCount >= 5}
 				<button class="btn btn-primary mt-8 w-full" onclick={() => handleAddPlan(url)}
-					>强制忽略错误，加入录制计划并自动重试</button
+					>{$t('forceIgnoreError')}</button
 				>
 			{/if}
 		{/if}

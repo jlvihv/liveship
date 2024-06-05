@@ -8,6 +8,7 @@
 	import Dialog from './dialog.svelte';
 	import { closeDialog, openDialog, formatFileSize, getPlatformIcon } from '$lib/utils';
 	import { invoke } from '@tauri-apps/api/core';
+	import { t } from '@/translations';
 	dayjs.extend(relativeTime);
 	dayjs.locale('zh-cn');
 
@@ -41,7 +42,7 @@
 				list = data as RecordingHistory[];
 			})
 			.catch((e) => {
-				toast.error('获取录制历史失败', {
+				toast.error($t('getRecordHistoryFailed'), {
 					description: e
 				});
 			});
@@ -53,11 +54,11 @@
 		deleteHistoryParams = undefined;
 		invoke('delete_history', { url, startTime, deleteFile })
 			.then(() => {
-				toast.success('删除成功');
+				toast.success($t('deleteSuccess'));
 				getAllHistory();
 			})
 			.catch((e) => {
-				toast.error('删除失败', {
+				toast.error($t('deleteSuccess'), {
 					description: e
 				});
 			});
@@ -67,16 +68,16 @@
 		closeDialog(stopRecordDialogId);
 		dialogUrl = '';
 		if (url === '') {
-			toast.error('url 不能为空');
+			toast.error($t('urlCannotBeEmpty'));
 			return;
 		}
 		invoke('stop_record', { url })
 			.then(() => {
-				toast.success('已经停止录制啦');
+				toast.success($t('recordAlreadyStopped'));
 				getAllHistory();
 			})
 			.catch((e) => {
-				toast.error('停止录制失败', {
+				toast.error($t('recordStopFailed'), {
 					description: e
 				});
 			});
@@ -86,10 +87,10 @@
 	async function openInFolder(path: string) {
 		invoke('open_in_folder', { path })
 			.then(() => {
-				toast.success('已经在文件管理器中打开了');
+				toast.success($t('openedInFileManager'));
 			})
 			.catch((e) => {
-				toast.error('打开文件夹失败', {
+				toast.error($t('openInFileManagerFailed'), {
 					description: e
 				});
 			});
@@ -105,29 +106,34 @@
 </script>
 
 <!-- 原生对话框 -->
-<Dialog id={stopRecordDialogId} text="确定停止录制吗？">
+<Dialog id={stopRecordDialogId} text={$t('confirmStopRecord')}>
 	<button
 		class="btn w-24"
 		onclick={() => {
 			closeDialog(stopRecordDialogId);
 			dialogUrl = '';
-		}}>取消</button
+		}}>{$t('cancel')}</button
 	>
-	<button class="btn btn-primary w-32" onclick={() => stopRecord(dialogUrl)}>确定</button>
+	<!-- svelte-ignore a11y_autofocus -->
+	<button autofocus class="btn btn-primary w-32" onclick={() => stopRecord(dialogUrl)}
+		>{$t('confirm')}</button
+	>
 </Dialog>
 
 <Dialog
 	id={deleteHistoryDialogId}
-	text={deleteHistoryParams?.deleted ? '确定删除此记录吗？' : '仅删除记录，还是同时删除文件？'}
+	text={deleteHistoryParams?.deleted ? $t('confirmDeleteRecord') : $t('deleteRecordOnlyOrFile')}
 >
 	<button
 		class="btn w-24"
 		onclick={() => {
 			closeDialog(deleteHistoryDialogId);
 			deleteHistoryParams = undefined;
-		}}>取消</button
+		}}>{$t('cancel')}</button
 	>
+	<!-- svelte-ignore a11y_autofocus -->
 	<button
+		autofocus={!deleteHistoryParams?.deleted}
 		class="btn btn-primary w-32"
 		onclick={() =>
 			deleteHistory(
@@ -135,17 +141,19 @@
 				deleteHistoryParams!.startTime,
 				false
 			)}
-		>{deleteHistoryParams?.deleted ? '确定' : '仅删除记录'}</button
+		>{deleteHistoryParams?.deleted ? $t('confirm') : $t('deleteRecordOnly')}</button
 	>
 	{#if !deleteHistoryParams?.deleted}
+		<!-- svelte-ignore a11y_autofocus -->
 		<button
+			autofocus
 			class="btn btn-primary w-32"
 			onclick={() => deleteHistory(
 			  deleteHistoryParams!.url,
     deleteHistoryParams!.startTime,
     true
 			)}
-			>同时删除文件</button
+			>{$t('deleteRecordAndFile')}</button
 		>
 	{/if}
 </Dialog>
@@ -159,14 +167,14 @@
 		<table class="table table-zebra">
 			<thead>
 				<tr>
-					<th class="text-center">状态</th>
-					<th>平台</th>
-					<th>主播</th>
-					<th>直播间</th>
-					<th>时长</th>
-					<th>大小</th>
-					<th>文件</th>
-					<th class="min-w-20">操作</th>
+					<th class="text-center">{$t('status')}</th>
+					<th>{$t('platform')}</th>
+					<th>{$t('anchor')}</th>
+					<th>{$t('liveAddress')}</th>
+					<th>{$t('duration')}</th>
+					<th>{$t('size')}</th>
+					<th>{$t('file')}</th>
+					<th class="min-w-20">{$t('action')}</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -179,7 +187,9 @@
 									RecordingStatus.Recording
 										? 'blink bg-green-500'
 										: 'bg-gray-300 dark:bg-gray-600'}"
-									data-tip={row.status == RecordingStatus.Recording ? '录制中' : '已结束'}
+									data-tip={row.status == RecordingStatus.Recording
+										? $t('recording')
+										: $t('recorded')}
 								>
 								</span>
 							</p>
@@ -204,7 +214,7 @@
 								<button
 									onclick={() => openInFolder(row.path)}
 									class="tooltip text-left"
-									data-tip="在文件管理器中打开"
+									data-tip={$t('openInFileManager')}
 								>
 									<!-- {row.path} -->
 
@@ -222,7 +232,10 @@
 									>
 								</button>
 							{:else}
-								<span class="tooltip text-gray-300 dark:text-gray-600" data-tip="文件不存在">
+								<span
+									class="tooltip text-gray-300 dark:text-gray-600"
+									data-tip={$t('fileNotExist')}
+								>
 									<svg
 										class="h-6 w-6"
 										xmlns="http://www.w3.org/2000/svg"
@@ -242,7 +255,7 @@
 							{#if row.status === RecordingStatus.Recording}
 								<button
 									class="tooltip"
-									data-tip="停止录制"
+									data-tip={$t('stopRecord')}
 									onclick={() => {
 										openDialog(stopRecordDialogId);
 										dialogUrl = row.url;
@@ -264,7 +277,7 @@
 							{:else}
 								<button
 									class="tooltip"
-									data-tip="删除此记录"
+									data-tip={$t('deleteThisRecord')}
 									onclick={() => {
 										deleteHistoryParams = {
 											url: row.url,
@@ -296,7 +309,7 @@
 	</div>
 {:else}
 	<div class="flex h-full w-full items-center justify-center">
-		<p>录制历史为空，先去新增录制吧</p>
+		<p>{$t('recordHistoryEmpty')}</p>
 	</div>
 {/if}
 

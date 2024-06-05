@@ -5,6 +5,7 @@
 	import { toast } from 'svelte-sonner';
 	import Dialog from './dialog.svelte';
 	import { closeDialog, getPlatformIcon, openDialog } from '@/utils';
+	import { t } from '@/translations';
 
 	const deletePlanDialogId = 'deletePlan';
 	let list: RecordingPlan[] = $state([]);
@@ -32,7 +33,7 @@
 				list = data as RecordingPlan[];
 			})
 			.catch((e) => {
-				toast.error('获取录制计划失败', {
+				toast.error($t('getRecordPlanFailed'), {
 					description: e
 				});
 			});
@@ -43,11 +44,11 @@
 		dialogUrl = '';
 		invoke('delete_plan', { url })
 			.then(() => {
-				toast.success('删除成功');
+				toast.success($t('deleteSuccess'));
 				getAllPlans();
 			})
 			.catch((e) => {
-				toast.error('删除失败', {
+				toast.error($t('deleteFailed'), {
 					description: e
 				});
 			});
@@ -56,11 +57,11 @@
 	async function updatePlanStatus(url: string, enabled: boolean) {
 		invoke('update_plan_status', { url, enabled })
 			.then(() => {
-				toast.success('更新成功');
+				toast.success($t('updateSuccess'));
 				getAllPlans();
 			})
 			.catch((e) => {
-				toast.error('更新失败', {
+				toast.error($t('updateFailed'), {
 					description: e
 				});
 			});
@@ -73,7 +74,7 @@
 				lastPollingTime = data as number;
 			})
 			.catch((e) => {
-				toast.error('获取最新轮询时间失败', {
+				toast.error($t('getLatestPollTimeFailed'), {
 					description: e
 				});
 			});
@@ -89,13 +90,13 @@
 		<table class="table table-zebra">
 			<thead>
 				<tr>
-					<th>平台</th>
-					<th class="min-w-20">主播</th>
-					<th>直播间</th>
-					<th>类型</th>
-					<th>分辨率</th>
-					<th>状态</th>
-					<th class="min-w-20">操作</th>
+					<th>{$t('platform')}</th>
+					<th class="min-w-20">{$t('anchor')}</th>
+					<th>{$t('liveAddress')}</th>
+					<th>{$t('type')}</th>
+					<th>{$t('resolution')}</th>
+					<th>{$t('status')}</th>
+					<th class="min-w-24">{$t('action')}</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -129,7 +130,7 @@
 							{#if row.enabled}
 								<button
 									class="tooltip cursor-pointer text-green-500"
-									data-tip="点击以禁用"
+									data-tip={$t('clickToDisable')}
 									onclick={() => updatePlanStatus(row.url, false)}
 								>
 									<svg
@@ -148,7 +149,7 @@
 							{:else}
 								<button
 									class="tooltip cursor-pointer text-gray-400 dark:text-gray-500"
-									data-tip="点击以启用"
+									data-tip={$t('clickToEnable')}
 									onclick={() => updatePlanStatus(row.url, true)}
 								>
 									<svg
@@ -169,7 +170,7 @@
 						<td
 							><button
 								class="tooltip"
-								data-tip="删除此计划"
+								data-tip={$t('deleteThisPlan')}
 								onclick={() => {
 									openDialog(deletePlanDialogId);
 									dialogUrl = row.url;
@@ -196,18 +197,21 @@
 	</div>
 {:else}
 	<div class="flex h-full w-full items-center justify-center">
-		<p>录制计划为空</p>
+		<p>{$t('recordPlanEmpty')}</p>
 	</div>
 {/if}
 
 <!-- 原生对话框 -->
-<Dialog text="确定删除此计划吗？" id={deletePlanDialogId}>
+<Dialog text={$t('confirmDeletePlan')} id={deletePlanDialogId}>
 	<button
 		class="btn w-24"
 		onclick={() => {
 			closeDialog(deletePlanDialogId);
 			dialogUrl = '';
-		}}>取消</button
+		}}>{$t('cancel')}</button
 	>
-	<button class="btn btn-primary w-24" onclick={() => deletePlan(dialogUrl)}>确定</button>
+	<!-- svelte-ignore a11y_autofocus -->
+	<button autofocus class="btn btn-primary w-24" onclick={() => deletePlan(dialogUrl)}
+		>{$t('confirm')}</button
+	>
 </Dialog>

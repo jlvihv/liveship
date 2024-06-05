@@ -1,3 +1,8 @@
+import { PlatformKind, type LiveInfo } from './model';
+import { getLiveInfoForDouyin } from './platform/douyin';
+import { getLiveInfoForHuya } from './platform/huya';
+import { getLiveInfoForTiktok } from './platform/tiktok';
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function debounce<F extends (...args: any[]) => any>(
 	fn: F,
@@ -44,7 +49,7 @@ export function getResolutionName(resolution: string) {
 		case 'hd':
 			return '超清';
 		case 'hd-60':
-			return '超清60帧';
+			return '超清 60 帧';
 		case 'sd1':
 			return '高清';
 		case 'sd2':
@@ -102,5 +107,37 @@ export function getPlatformIcon(platformKind: string): string {
 			return 'https://www.tiktok.com/favicon.ico';
 		default:
 			return 'https://www.google.com/favicon.ico';
+	}
+}
+
+// 获取对应平台的 PlatformKind
+export function getPlatformKind(url: string): PlatformKind {
+	url = url.toLowerCase();
+	switch (true) {
+		case url.startsWith('https://live.douyin.com/') || url.startsWith('https://v.douyin.com/'):
+			return PlatformKind.Douyin;
+		case url.startsWith('https://www.tiktok.com/'):
+			return PlatformKind.Tiktok;
+		case url.startsWith('https://www.xiaohongshu.com/'):
+			return PlatformKind.Xiaohongshu;
+		case url.startsWith('https://www.huya.com/'):
+			return PlatformKind.Huya;
+		default:
+			return PlatformKind.Unknown;
+	}
+}
+
+// 根据 url 获取对应平台的直播信息，先获取 PlatformKind，再获取对应的直播信息
+export async function getLiveInfoForPlatform(url: string): Promise<LiveInfo> {
+	let platformKind = getPlatformKind(url);
+	switch (platformKind) {
+		case PlatformKind.Douyin:
+			return getLiveInfoForDouyin(url);
+		case PlatformKind.Tiktok:
+			return getLiveInfoForTiktok(url);
+		case PlatformKind.Huya:
+			return getLiveInfoForHuya(url);
+		default:
+			throw new Error('unknown platform');
 	}
 }

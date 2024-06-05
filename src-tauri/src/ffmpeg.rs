@@ -10,6 +10,12 @@ pub fn record(ffmpeg_path: &str, url: &str, filename: &str) -> Result<Child> {
 
     // 调用 ffmpeg 命令
     let mut cmd = std::process::Command::new(ffmpeg_path);
+    // 特定于 windows 的实现，使用 CommandExt，避免出现黑窗口
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
     cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
     let ffmpeg_command = build_ffmpeg_command(url, filename);
     cmd.args(&ffmpeg_command);

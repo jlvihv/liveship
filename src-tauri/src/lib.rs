@@ -6,8 +6,6 @@ mod ffmpeg;
 pub mod kv;
 mod manager;
 mod model;
-mod platform;
-mod recorder;
 mod request;
 mod utils;
 
@@ -42,12 +40,13 @@ pub fn run() {
             manager::plan::delete_plan,
             manager::plan::update_plan_status,
             manager::plan::get_last_polling_time,
+            manager::plan::get_plans_not_recording,
             manager::config::get_config,
             manager::config::set_config,
-            manager::live::live_info,
             manager::ffmpeg_api::check_ffmpeg_version,
             manager::ffmpeg_api::check_ffmpeg_availability,
             manager::ffmpeg_api::download_ffmpeg,
+            manager::ffmpeg_api::request,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
