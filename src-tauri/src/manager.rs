@@ -119,6 +119,7 @@ pub mod record {
             plan.live_info = Some(live_info.clone());
             kv::plan::add(&plan).map_err(|e| format!("Could not add recording plan: {}", e))?;
         }
+        println!("开始录制：{:#?} {:#?}", stream, live_info);
         inner::start_record_with_stream(stream, live_info)
             .await
             .map_err(|e| {
@@ -333,7 +334,10 @@ pub mod config {
 }
 
 pub mod ffmpeg_api {
-    use crate::{model::JsonMap, request};
+    use crate::{
+        model::{JsonMap, JsonValue},
+        request,
+    };
 
     use super::*;
 
@@ -382,6 +386,33 @@ pub mod ffmpeg_api {
         }
 
         let resp = request::get_with_headers(&url, header_map)
+            .await
+            .map_err(|e| format!("Could not request: {}", e))?
+            .text()
+            .await
+            .map_err(|e| format!("Could not get text: {}", e))?;
+        Ok(resp)
+    }
+
+    // post 请求
+    #[tauri::command]
+    pub async fn request_post(
+        url: String,
+        headers: JsonMap,
+        body: JsonValue,
+    ) -> Result<String, String> {
+        let headers = headers
+            .iter()
+            .map(|(k, v)| (k.as_str().into(), v.as_str().unwrap_or("").into()))
+            .collect::<Vec<(String, String)>>();
+        let mut header_map = reqwest::header::HeaderMap::new();
+        for (k, v) in headers {
+            header_map.insert(
+                reqwest::header::HeaderName::from_bytes(k.as_bytes()).map_err(|e| e.to_string())?,
+                reqwest::header::HeaderValue::from_str(&v).map_err(|e| e.to_string())?,
+            );
+        }
+        let resp = request::post(&url, header_map, body.to_string())
             .await
             .map_err(|e| format!("Could not request: {}", e))?
             .text()

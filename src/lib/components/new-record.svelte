@@ -67,6 +67,8 @@
 		if (!url) {
 			return;
 		}
+		// 先清空之前的数据
+		liveInfo = undefined;
 		requesting = true;
 		isRotating = true;
 		// 取消之前的 setTimeout
@@ -81,6 +83,8 @@
 		try {
 			liveInfo = await getLiveInfoForPlatform(url);
 		} catch (err) {
+			requesting = false;
+			isRotating = false;
 			errorMessage = err as string;
 			return;
 		}
@@ -133,6 +137,7 @@
 			loading = false;
 			return;
 		}
+		console.log('stream', stream, liveInfo);
 		invoke('start_record', {
 			autoRecord,
 			stream,

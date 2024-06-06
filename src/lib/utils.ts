@@ -2,6 +2,7 @@ import { PlatformKind, type LiveInfo } from './model';
 import { getLiveInfoForDouyin } from './platform/douyin';
 import { getLiveInfoForHuya } from './platform/huya';
 import { getLiveInfoForTiktok } from './platform/tiktok';
+import { getLiveInfoForTwitch } from './platform/twitch';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function debounce<F extends (...args: any[]) => any>(
@@ -122,6 +123,8 @@ export function getPlatformKind(url: string): PlatformKind {
 			return PlatformKind.Xiaohongshu;
 		case url.startsWith('https://www.huya.com/'):
 			return PlatformKind.Huya;
+		case url.startsWith('https://www.twitch.tv/'):
+			return PlatformKind.Twitch;
 		default:
 			return PlatformKind.Unknown;
 	}
@@ -137,6 +140,8 @@ export async function getLiveInfoForPlatform(url: string): Promise<LiveInfo> {
 			return getLiveInfoForTiktok(url);
 		case PlatformKind.Huya:
 			return getLiveInfoForHuya(url);
+		case PlatformKind.Twitch:
+			return getLiveInfoForTwitch(url);
 		default:
 			throw new Error('unknown platform');
 	}

@@ -10,12 +10,10 @@ export function checkPlanLoop() {
 }
 
 function checkPlans() {
-	console.log('check plans');
 	// 首先，获取有计划，但未在录制的任务
 	invoke('get_plans_not_recording')
 		.then((data) => {
 			let plans: RecordingPlan[] = data as RecordingPlan[];
-			console.log('get all plans: ', plans);
 			if (plans.length == 0) {
 				return;
 			}

@@ -2,7 +2,7 @@ import { LiveStatus, PlatformKind, StreamingProtocol, type LiveInfo } from '@/mo
 import { invoke } from '@tauri-apps/api/core';
 
 export async function getLiveInfoForDouyin(url: string): Promise<LiveInfo> {
-	let info = {
+	let info: LiveInfo = {
 		url,
 		title: '',
 		anchorName: '',

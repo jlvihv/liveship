@@ -126,6 +126,7 @@ pub enum PlatformKind {
     Huya,
     Kuaishou,
     Douyu,
+    Twitch,
     Unknown,
 }
 
