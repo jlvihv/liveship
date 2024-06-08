@@ -78,5 +78,7 @@
 	"savePath": "文件保存路径",
 	"pollInterval": "开播信息轮询间隔（单位秒）",
 	"save": "保存",
-	"language": "语言"
+	"language": "语言",
+	"auto": "自动",
+	"forHuyaError": "对于虎牙平台，该信息可能有误。可将其加入录制计划，程序会自动重试"
 }

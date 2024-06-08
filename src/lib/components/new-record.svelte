@@ -10,7 +10,13 @@
 	} from '$lib/utils';
 	import { onMount } from 'svelte';
 	import { invoke } from '@tauri-apps/api/core';
-	import { LiveStatus, RecordingStatus, type LiveInfo, type Stream } from '$lib/model';
+	import {
+		LiveStatus,
+		PlatformKind,
+		RecordingStatus,
+		type LiveInfo,
+		type Stream
+	} from '$lib/model';
 	import { t } from '@/translations';
 
 	let url = $state('');
@@ -364,6 +370,9 @@
 					{:else}
 						<div>
 							<div>{$t('anchor')} {liveInfo.anchorName} {$t('notInLive')}</div>
+							{#if liveInfo.platformKind == PlatformKind.Huya}
+								<div>{$t('forHuyaError')}</div>
+							{/if}
 							<button class="btn btn-primary mt-8 w-full" onclick={() => handleAddPlan(url)}
 								>{$t('addPlan')}</button
 							>

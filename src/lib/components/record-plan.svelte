@@ -125,7 +125,7 @@
 							{/if}
 						</td>
 						<td>{row.streamProtocol}</td>
-						<td>{row.streamResolution}</td>
+						<td>{row.streamResolution !== '' ? row.streamResolution : $t('auto')}</td>
 						<td>
 							{#if row.enabled}
 								<button

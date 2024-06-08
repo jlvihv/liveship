@@ -119,6 +119,11 @@ pub mod record {
             plan.live_info = Some(live_info.clone());
             kv::plan::add(&plan).map_err(|e| format!("Could not add recording plan: {}", e))?;
         }
+        // 写入 live info
+        kv::live::add(&live_info).map_err(|e| {
+            eprintln!("Could not add live info: {}", e);
+            e.to_string()
+        })?;
         println!("开始录制：{:#?} {:#?}", stream, live_info);
         inner::start_record_with_stream(stream, live_info)
             .await

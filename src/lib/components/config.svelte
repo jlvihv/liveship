@@ -119,7 +119,7 @@
 			/>
 		</label>
 
-		<label class="input input-bordered flex items-center gap-8">
+		<!-- <label class="input input-bordered flex items-center gap-8">
 			{$t('pollInterval')}
 			<input
 				type="number"
@@ -127,7 +127,7 @@
 				placeholder=""
 				bind:value={config.liveInfoCheckInterval}
 			/>
-		</label>
+		</label> -->
 
 		<div class="flex items-center justify-center gap-8 p-8">
 			{#if changed}

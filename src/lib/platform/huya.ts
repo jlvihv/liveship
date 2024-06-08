@@ -11,7 +11,7 @@ export async function getLiveInfoForHuya(url: string): Promise<LiveInfo> {
 		viewerCount: '',
 		roomCover: '',
 		streams: [],
-		platformKind: PlatformKind.Tiktok,
+		platformKind: PlatformKind.Huya,
 		status: LiveStatus.NotLive
 	};
 
@@ -62,6 +62,7 @@ function parseHtmlAndFillLiveInfo(html: string, info: LiveInfo) {
 		resolution: 'default',
 		protocol: StreamingProtocol.Flv
 	});
+	info.status = LiveStatus.Live;
 }
 
 function getAntiCode(oldAntiCode: string, streamName: string): string | undefined {
