@@ -35,6 +35,7 @@ pub fn run() {
             manager::history::delete_history,
             manager::history::open_in_folder,
             manager::plan::get_all_plans,
+            manager::plan::get_plan,
             manager::plan::add_plan,
             manager::plan::add_plan_with_url,
             manager::plan::delete_plan,
@@ -46,8 +47,8 @@ pub fn run() {
             manager::ffmpeg_api::check_ffmpeg_version,
             manager::ffmpeg_api::check_ffmpeg_availability,
             manager::ffmpeg_api::download_ffmpeg,
-            manager::ffmpeg_api::request,
-            manager::ffmpeg_api::request_post,
+            manager::request_api::request,
+            manager::request_api::request_post,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

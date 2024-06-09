@@ -9,6 +9,7 @@
 	import { closeDialog, openDialog, formatFileSize, getPlatformIcon } from '$lib/utils';
 	import { invoke } from '@tauri-apps/api/core';
 	import { t } from '@/translations';
+	import RecordPlan from './record-plan.svelte';
 	dayjs.extend(relativeTime);
 
 	// icon fluent 28
@@ -16,10 +17,10 @@
 	let stopRecordDialogId = 'stopRecord';
 	let deleteHistoryDialogId = 'deleteHistory';
 	let list: RecordingHistory[] = $state([]);
-	let dialogUrl = $state('');
 	let intervalId: number | undefined = $state();
 	let deleteHistoryParams: { url: string; startTime: number; deleted: boolean } | undefined =
 		$state();
+	let stopRecordParams: { url: string; inPlan: boolean } | undefined = $state();
 
 	// 组件挂载时，获取录制历史，并每隔两秒获取一次
 	onMount(async () => {
@@ -71,12 +72,22 @@
 			});
 	}
 
-	async function stopRecord(url: string) {
+	async function stopRecord(url: string, disablePlan: boolean) {
+		stopRecordParams = undefined;
 		closeDialog(stopRecordDialogId);
-		dialogUrl = '';
 		if (url === '') {
 			toast.error($t('urlCannotBeEmpty'));
 			return;
+		}
+		if (disablePlan) {
+			// 禁用此计划
+			invoke('update_plan_status', { url, enabled: false })
+				.then(() => {})
+				.catch((e) => {
+					toast.error($t('disablePlanFailed'), {
+						description: e
+					});
+				});
 		}
 		invoke('stop_record', { url })
 			.then(() => {
@@ -110,21 +121,52 @@
 		}
 		return dayjs(startTime).to(dayjs(endTime), true);
 	}
+
+	// 获取对应 url 的计划信息
+	async function getPlan(url: string): Promise<RecordPlan | null> {
+		try {
+			let data = await invoke('get_plan', { url });
+			let plan = data as RecordPlan;
+			return plan;
+		} catch (e) {
+			return null;
+		}
+	}
+
+	// 判断是否在计划中，且计划为开启
+	async function isInPlan(url: string): Promise<boolean> {
+		const plan = await getPlan(url);
+		return plan !== null && plan.enabled;
+	}
 </script>
 
 <!-- 原生对话框 -->
-<Dialog id={stopRecordDialogId} text={$t('confirmStopRecord')}>
+<Dialog
+	id={stopRecordDialogId}
+	text={stopRecordParams?.inPlan ? $t('confirmStopRecordAndDisablePlan') : $t('confirmStopRecord')}
+>
 	<button
 		class="btn w-24"
 		onclick={() => {
 			closeDialog(stopRecordDialogId);
-			dialogUrl = '';
+			stopRecordParams = undefined;
 		}}>{$t('cancel')}</button
 	>
 	<!-- svelte-ignore a11y_autofocus -->
-	<button autofocus class="btn btn-primary w-32" onclick={() => stopRecord(dialogUrl)}
-		>{$t('confirm')}</button
+	<button
+		autofocus
+		class="btn btn-primary w-32"
+		onclick={() => stopRecord(stopRecordParams?.url || '', false)}
+		>{stopRecordParams?.inPlan ? $t('onlyStopRecord') : $t('confirm')}</button
 	>
+	{#if stopRecordParams?.inPlan}
+		<!-- svelte-ignore a11y_autofocus -->
+		<button
+			class="btn btn-primary w-32"
+			onclick={() => stopRecord(stopRecordParams?.url || '', true)}
+			>{$t('stopRecordAndDisablePlan')}</button
+		>
+	{/if}
 </Dialog>
 
 <Dialog
@@ -140,7 +182,7 @@
 	>
 	<!-- svelte-ignore a11y_autofocus -->
 	<button
-		autofocus={!deleteHistoryParams?.deleted}
+		autofocus
 		class="btn btn-primary w-32"
 		onclick={() =>
 			deleteHistory(
@@ -153,7 +195,6 @@
 	{#if !deleteHistoryParams?.deleted}
 		<!-- svelte-ignore a11y_autofocus -->
 		<button
-			autofocus
 			class="btn btn-primary w-32"
 			onclick={() => deleteHistory(
 			  deleteHistoryParams!.url,
@@ -263,9 +304,12 @@
 								<button
 									class="tooltip"
 									data-tip={$t('stopRecord')}
-									onclick={() => {
+									onclick={async () => {
+										stopRecordParams = {
+											url: row.url,
+											inPlan: await isInPlan(row.url)
+										};
 										openDialog(stopRecordDialogId);
-										dialogUrl = row.url;
 									}}
 								>
 									<svg

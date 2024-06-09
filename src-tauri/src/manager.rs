@@ -3,8 +3,8 @@ use crate::model::LiveInfo;
 use crate::model::{PlatformKind, Stream};
 use crate::{
     ffmpeg, kv,
-    model::{RecordStatus, RecordingHistory, RecordingPlan},
-    utils,
+    model::{JsonMap, JsonValue, RecordStatus, RecordingHistory, RecordingPlan},
+    request, utils,
 };
 use chrono::Utc;
 use dashmap::DashMap;
@@ -205,6 +205,16 @@ pub mod plan {
         Ok(plans)
     }
 
+    /// 获取所有录制计划
+    #[tauri::command]
+    pub async fn get_plan(url: String) -> Result<Option<RecordingPlan>, String> {
+        let plan = kv::plan::get(url).map_err(|e| {
+            eprintln!("Could not get recording plan: {}", e);
+            e.to_string()
+        })?;
+        Ok(plan)
+    }
+
     /// 新增录制计划
     #[tauri::command]
     pub async fn add_plan(plan: RecordingPlan) -> Result<(), String> {
@@ -339,11 +349,6 @@ pub mod config {
 }
 
 pub mod ffmpeg_api {
-    use crate::{
-        model::{JsonMap, JsonValue},
-        request,
-    };
-
     use super::*;
 
     /// 检查 ffmpeg
@@ -373,6 +378,10 @@ pub mod ffmpeg_api {
         kv::config::set(&config).map_err(|e| format!("Could not set config: {}", e))?;
         Ok(path)
     }
+}
+
+pub mod request_api {
+    use super::*;
 
     /// 请求 url，得到 text
     #[tauri::command]

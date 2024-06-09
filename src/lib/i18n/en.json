@@ -80,5 +80,8 @@
 	"save": "Save",
 	"language": "Language",
 	"auto": "Auto",
-	"forHuyaError": "For Huya platform, this information may be incorrect. You can add it to the recording plan, and the program will automatically retry it"
+	"forHuyaError": "For Huya platform, this information may be incorrect. You can add it to the recording plan, and the program will automatically retry it",
+	"confirmStopRecordAndDisablePlan": "This recording is in the plan. After stopping the recording, it will be recorded again according to the plan. Do you want to stop the recording only or disable this plan at the same time?",
+	"onlyStopRecord": "Stop recording only",
+	"stopRecordAndDisablePlan": "Disable this plan at the same time"
 }

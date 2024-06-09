@@ -113,6 +113,20 @@ pub mod plan {
         Ok(plans)
     }
 
+    /// 获取一个录制计划
+    pub fn get(url: String) -> Result<Option<RecordingPlan>> {
+        let read_txn = db().begin_read()?;
+        let table = read_txn.open_table(TABLE)?;
+        let result = table.get(format!("plan:{}", url).as_str())?;
+        match result {
+            Some(plan) => {
+                let plan: RecordingPlan = serde_json::from_slice(&plan.value())?;
+                Ok(Some(plan))
+            }
+            None => Ok(None),
+        }
+    }
+
     /// 获取所有启用的录制计划
     pub fn get_enabled() -> Result<Vec<RecordingPlan>> {
         let read_txn = db().begin_read()?;
