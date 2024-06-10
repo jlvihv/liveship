@@ -19,6 +19,7 @@ export enum PlatformKind {
 	Kuaishou = 'Kuaishou',
 	Bilibili = 'Bilibili',
 	Twitch = 'Twitch',
+	Youtube = 'Youtube',
 	Unknown = 'Unknown'
 }
 

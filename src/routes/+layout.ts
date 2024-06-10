@@ -5,14 +5,12 @@ export const prerender = true;
 export const ssr = false;
 import { loadTranslations } from '$lib/translations';
 
-/** @type {import('@sveltejs/kit').Load} */
-export const load = async ({ url }) => {
+export const load = async ({ url }: { url: any }) => {
 	const { pathname } = url;
 
-	// get from localStorage
 	const initLocale = localStorage.getItem('lang') || 'en';
 
-	await loadTranslations(initLocale, pathname); // keep this just before the `return`
+	await loadTranslations(initLocale, pathname);
 
 	// 动态导入 checkPlanLoop
 	const { checkPlanLoop } = await import('$lib/backstage');

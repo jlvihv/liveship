@@ -83,5 +83,14 @@
 	"forHuyaError": "For Huya platform, this information may be incorrect. You can add it to the recording plan, and the program will automatically retry it",
 	"confirmStopRecordAndDisablePlan": "This recording is in the plan. After stopping the recording, it will be recorded again according to the plan. Do you want to stop the recording only or disable this plan at the same time?",
 	"onlyStopRecord": "Stop recording only",
-	"stopRecordAndDisablePlan": "Disable this plan at the same time"
+	"stopRecordAndDisablePlan": "Disable this plan at the same time",
+	"delete": "Delete",
+	"stop": "Stop",
+	"clear": "Clear",
+	"gotoRecordList": "View in record list",
+	"inPlan": "In plan",
+	"notInPlan": "Not in plan",
+	"planDeleted": "Plan deleted",
+	"planDeleteFailed": "Failed to delete plan",
+	"planAdded": "Plan added"
 }

@@ -3,6 +3,7 @@ import { getLiveInfoForDouyin } from './platform/douyin';
 import { getLiveInfoForHuya } from './platform/huya';
 import { getLiveInfoForTiktok } from './platform/tiktok';
 import { getLiveInfoForTwitch } from './platform/twitch';
+import { getLiveInfoForYoutube } from './platform/youtube';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function debounce<F extends (...args: any[]) => any>(
@@ -125,6 +126,8 @@ export function getPlatformKind(url: string): PlatformKind {
 			return PlatformKind.Huya;
 		case url.startsWith('https://www.twitch.tv/'):
 			return PlatformKind.Twitch;
+		case url.startsWith('https://www.youtube.com/watch?v='):
+			return PlatformKind.Youtube;
 		default:
 			return PlatformKind.Unknown;
 	}
@@ -142,6 +145,8 @@ export async function getLiveInfoForPlatform(url: string): Promise<LiveInfo> {
 			return getLiveInfoForHuya(url);
 		case PlatformKind.Twitch:
 			return getLiveInfoForTwitch(url);
+		case PlatformKind.Youtube:
+			return getLiveInfoForYoutube(url);
 		default:
 			throw new Error('unknown platform');
 	}

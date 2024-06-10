@@ -80,23 +80,25 @@
 </script>
 
 {#if config}
-	<div class="grid gap-8 p-8 text-gray-400">
+	<div class="text-white2 grid gap-8 p-8">
 		<label class="flex items-center gap-8">
 			{$t('language')}
 			<select
 				bind:value={language}
-				class="select min-w-32 text-gray-700 dark:text-gray-200"
+				class="min-w-32 border-none focus:outline-none focus:ring-0"
 				onchange={() => changeLanguage(language)}
 			>
 				<option value="en">English</option>
 				<option value="cn">中文</option>
 			</select>
 		</label>
-		<label class="input input-bordered flex items-center gap-8">
-			{$t('ffmpegPath')}
+		<label class="flex h-14 items-center rounded-xl bg-gray1 forced-color-adjust-none">
+			<span class="flex h-full items-center border-r-2 border-dark px-4">
+				{$t('ffmpegPath')}
+			</span>
 			<input
 				type="text"
-				class="grow text-gray-700 dark:text-gray-200"
+				class="m-0 grow resize-none appearance-none overflow-hidden bg-transparent px-0 py-4 pl-4 placeholder-gray2 outline-none focus:text-white1"
 				placeholder={$t('ffmpegPathPlaceholder')}
 				bind:value={config.ffmpegPath}
 				oninput={handleFfmpegPathChange}
@@ -104,16 +106,18 @@
 			{#if ffmpegVersion}
 				<span class="text-green-500" transition:fade>{ffmpegVersion}</span>
 			{/if}
-			<button onclick={() => {
+			<button class="px-4" onclick={() => {
 					checkFFmpeg(config!.ffmpegPath);
 				}}>{$t('check')}</button>
 		</label>
 
-		<label class="input input-bordered flex items-center gap-8">
-			{$t('savePath')}
+		<label class="flex h-14 items-center rounded-xl bg-gray1 forced-color-adjust-none">
+			<span class="flex h-full items-center border-r-2 border-dark px-4">
+				{$t('savePath')}
+			</span>
 			<input
 				type="text"
-				class="grow text-gray-700 dark:text-gray-200"
+				class="m-0 grow resize-none appearance-none overflow-hidden bg-transparent px-0 py-4 pl-4 placeholder-gray2 outline-none focus:text-white1"
 				placeholder=""
 				bind:value={config.savePath}
 			/>
@@ -132,7 +136,7 @@
 		<div class="flex items-center justify-center gap-8 p-8">
 			{#if changed}
 				<button
-					class="btn btn-wide dark:bg-gray-400 dark:text-gray-800"
+					class="btn btn-wide"
 					onclick={() => (config = JSON.parse(JSON.stringify(rawConfig)))}>{$t('cancel')}</button
 				>
 				<button class="btn btn-primary btn-wide" onclick={async () => await setConfig()}

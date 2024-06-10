@@ -83,5 +83,14 @@
 	"save": "保存",
 	"language": "语言",
 	"auto": "自动",
-	"forHuyaError": "对于虎牙平台，该信息可能有误。可将其加入录制计划，程序会自动重试"
+	"forHuyaError": "对于虎牙平台，该信息可能有误。可将其加入录制计划，程序会自动重试",
+	"delete": "删除",
+	"stop": "停止",
+	"clear": "清空",
+	"gotoRecordList": "去录制列表中查看",
+	"inPlan": "在计划中",
+	"notInPlan": "不在计划中",
+	"planDeleted": "已删除计划",
+	"planDeleteFailed": "删除计划失败",
+	"planAdded": "已添加计划"
 }

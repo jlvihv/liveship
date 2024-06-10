@@ -5,14 +5,8 @@
 	import RecordList from '$lib/components/record-list.svelte';
 	import RecordPlan from '$lib/components/record-plan.svelte';
 	import Config from '$lib/components/config.svelte';
-	import { themeChange } from 'theme-change';
-	import { onMount } from 'svelte';
 
 	let currentPath = $state('new');
-
-	onMount(() => {
-		themeChange(false);
-	});
 </script>
 
 <div class="flex">

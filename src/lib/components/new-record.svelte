@@ -15,9 +15,11 @@
 		PlatformKind,
 		RecordingStatus,
 		type LiveInfo,
-		type Stream
+		type Stream,
+		type RecordingPlan
 	} from '$lib/model';
 	import { t } from '@/translations';
+	import Button from './button.svelte';
 
 	let url = $state('');
 	// 用一个变量来表示是否正在请求
@@ -34,6 +36,7 @@
 	let isFirst = $state(false);
 	let stream_url = $state('');
 	let refreshCount = $state(0);
+	let inPlan = $state(false);
 	const stopRecordDialogId = 'stopRecord';
 	const downloadFfmpegDialogId = 'downloadFfmpeg';
 
@@ -105,6 +108,9 @@
 				toast.error($t('getRecordStatusFailed'), {
 					description: err
 				});
+			})
+			.finally(async () => {
+				inPlan = await isInPlan(url);
 			});
 		requesting = false;
 		isRotating = false;
@@ -127,6 +133,62 @@
 			})
 			.finally(() => {
 				loading = false;
+			});
+	}
+
+	// 获取对应 url 的计划信息
+	async function getPlan(url: string): Promise<RecordingPlan | null> {
+		try {
+			let data = await invoke('get_plan', { url });
+			let plan = data as RecordingPlan;
+			return plan;
+		} catch (e) {
+			return null;
+		}
+	}
+
+	// 判断是否在计划中，且计划为开启
+	async function isInPlan(url: string): Promise<boolean> {
+		const plan = await getPlan(url);
+		return plan !== null && plan.enabled;
+	}
+
+	async function addOrDeletePlan(event: any) {
+		const isChecked = event.target.checked;
+		if (!isChecked) {
+			deletePlan(url);
+		} else {
+			addPlan(url);
+		}
+	}
+
+	async function deletePlan(url: string) {
+		invoke('delete_plan', { url })
+			.then(() => {
+				toast.success($t('planDeleted'));
+			})
+			.catch((e) => {
+				toast.error($t('planDeleteFailed'), {
+					description: e
+				});
+			})
+			.finally(async () => {
+				inPlan = await isInPlan(url);
+			});
+	}
+
+	async function addPlan(url: string) {
+		invoke('add_plan_with_url', { url })
+			.then(() => {
+				toast.success($t('planAdded'));
+			})
+			.catch((e) => {
+				toast.error($t('planAddFailed'), {
+					description: e
+				});
+			})
+			.finally(async () => {
+				inPlan = await isInPlan(url);
 			});
 	}
 
@@ -209,23 +271,26 @@
 <!-- 原生对话框 -->
 <Dialog text={$t('confirmStopRecord')} id={stopRecordDialogId}>
 	<button
-		class="btn w-24"
+		class="btn w-24 rounded-xl"
 		onclick={() => {
 			closeDialog(stopRecordDialogId);
 		}}>{$t('cancel')}</button
 	>
-	<button class="btn btn-primary w-24" onclick={() => stopRecord(url)}>{$t('confirm')}</button>
+	<!-- svelte-ignore a11y_autofocus -->
+	<button autofocus class="btn w-24 rounded-xl" onclick={() => stopRecord(url)}
+		>{$t('confirm')}</button
+	>
 </Dialog>
 
 <!-- 询问是否自动安装 ffmpeg -->
 <Dialog text={$t('confirmInstallFFmpeg')} id={downloadFfmpegDialogId}>
 	<button
-		class="btn w-24"
+		class="btn w-24 rounded-xl"
 		onclick={() => {
 			closeDialog(downloadFfmpegDialogId);
 		}}>{$t('no')}</button
 	>
-	<button class="btn btn-primary w-24" onclick={() => ffmpegAutoDownload()}
+	<button class="btn w-32 rounded-xl" onclick={() => ffmpegAutoDownload()}
 		>{$t('autoInstall')}</button
 	>
 </Dialog>
@@ -237,33 +302,24 @@
 			? 'mt-16'
 			: 'mt-32'}"
 	>
-		<label class="input input-bordered input-info flex w-full items-center">
+		<label class="flex h-14 rounded-full bg-gray1 px-2 text-gray2 forced-color-adjust-none">
 			<input
-				class="grow"
-				bind:value={url}
-				placeholder={$t('inputPlaceholder')}
 				oninput={handleinput}
+				bind:value={url}
+				class="m-0 grow resize-none appearance-none overflow-hidden border-none bg-transparent px-0 py-4 pl-4 placeholder-gray2 outline-none focus:text-white1"
+				placeholder={$t('inputPlaceholder')}
 			/>
 			{#if url}
 				<button
+					class="tooltip mr-2 flex items-center"
+					data-tip={$t('clear')}
 					onclick={() => {
 						url = '';
 						liveInfo = undefined;
 						errorMessage = '';
 					}}
 				>
-					<svg
-						class="h-6 w-6 text-gray-300 dark:text-gray-600"
-						xmlns="http://www.w3.org/2000/svg"
-						xmlns:xlink="http://www.w3.org/1999/xlink"
-						viewBox="0 0 24 24"
-						><g fill="none"
-							><path
-								d="M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12S6.477 2 12 2zm0 1.5a8.5 8.5 0 1 0 0 17a8.5 8.5 0 0 0 0-17zm3.446 4.897l.084.073a.75.75 0 0 1 .073.976l-.073.084L13.061 12l2.47 2.47a.75.75 0 0 1 .072.976l-.073.084a.75.75 0 0 1-.976.073l-.084-.073L12 13.061l-2.47 2.47a.75.75 0 0 1-.976.072l-.084-.073a.75.75 0 0 1-.073-.976l.073-.084L10.939 12l-2.47-2.47a.75.75 0 0 1-.072-.976l.073-.084a.75.75 0 0 1 .976-.073l.084.073L12 10.939l2.47-2.47a.75.75 0 0 1 .976-.072z"
-								fill="currentColor"
-							></path></g
-						></svg
-					>
+					<span class="icon-[fluent--dismiss-circle-28-regular] h-6 w-6 text-gray-500"></span>
 				</button>
 			{/if}
 		</label>
@@ -271,16 +327,8 @@
 	{#if errorMessage || liveInfo || requesting}
 		<div class="mt-4 flex w-1/2 min-w-[600px] justify-end">
 			<button onclick={() => getLiveInfo(url)}>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					xmlns:xlink="http://www.w3.org/1999/xlink"
-					viewBox="0 0 24 24"
-					class="h-8 w-8 {isRotating ? 'rotate' : ''}"
-					><path
-						d="M17.65 6.35a7.95 7.95 0 0 0-6.48-2.31c-3.67.37-6.69 3.35-7.1 7.02C3.52 15.91 7.27 20 12 20a7.98 7.98 0 0 0 7.21-4.56c.32-.67-.16-1.44-.9-1.44c-.37 0-.72.2-.88.53a5.994 5.994 0 0 1-6.8 3.31c-2.22-.49-4.01-2.3-4.48-4.52A6.002 6.002 0 0 1 12 6c1.66 0 3.14.69 4.22 1.78l-1.51 1.51c-.63.63-.19 1.71.7 1.71H19c.55 0 1-.45 1-1V6.41c0-.89-1.08-1.34-1.71-.71l-.64.65z"
-						fill="currentColor"
-					></path></svg
-				>
+				<span class="icon-[fluent--arrow-clockwise-28-regular] h-8 w-8 {isRotating ? 'rotate' : ''}"
+				></span>
 			</button>
 		</div>
 	{/if}
@@ -298,10 +346,15 @@
 		{/if}
 		{#if liveInfo}
 			<div>
-				<div class="w-full">
+				<div class="w-full text-white1">
 					{#if liveInfo.status !== LiveStatus.NotLive}
 						<div>
-							<h1 class="text-2xl font-bold">{liveInfo.title}</h1>
+							<h1 class="text-2xl font-bold">
+								{liveInfo.title}
+								{#if recordStatus === RecordingStatus.Recording}
+									<span class="px-4 text-sm font-normal text-green-500">{$t('recording')}</span>
+								{/if}
+							</h1>
 						</div>
 
 						<div class="flex items-center gap-8 pt-8">
@@ -330,23 +383,39 @@
 						</div>
 						<div class="pt-8">
 							<div class="grid grid-cols-2 gap-8">
-								<select bind:value={stream_url} class="select select-info w-full">
+								<select
+									bind:value={stream_url}
+									class="w-full border-none focus:outline-none focus:ring-0"
+								>
 									{#each liveInfo.streams as item}
 										<option value={item.url}
 											>{item.protocol + ' ' + getResolutionName(item.resolution)}</option
 										>
 									{/each}
 								</select>
-								<!-- 可选框，以后自动录制该主播 -->
-								<label for="autoRecord" class="flex w-full items-center gap-4">
-									<input
-										class="checkbox"
-										type="checkbox"
-										id="autoRecord"
-										bind:checked={autoRecord}
-									/>
-									{$t('autoRecord')}</label
-								>
+								{#if recordStatus !== RecordingStatus.Recording}
+									<!-- 可选框，以后自动录制该主播 -->
+									<label for="autoRecord" class="flex w-full cursor-pointer items-center gap-4">
+										<input
+											class="checkbox"
+											type="checkbox"
+											id="autoRecord"
+											bind:checked={autoRecord}
+										/>
+										{$t('autoRecord')}</label
+									>
+								{:else}
+									<!-- 判断是否在计划中，可通过此可选框加入或取消计划 -->
+									<label for="autoRecord" class="flex w-full cursor-pointer items-center gap-4">
+										<input
+											class="checkbox"
+											type="checkbox"
+											bind:checked={inPlan}
+											onchange={(event) => addOrDeletePlan(event)}
+										/>
+										{inPlan ? $t('inPlan') : $t('notInPlan')}</label
+									>
+								{/if}
 							</div>
 						</div>
 						<div class="pt-8">
@@ -355,16 +424,22 @@
 									<span class="loading loading-dots loading-md"></span>
 								</div>
 							{:else if recordStatus === RecordingStatus.Recording}
-								<button
-									class="btn btn-error w-full"
-									onclick={() => {
-										openDialog(stopRecordDialogId);
-									}}>{$t('stopRecord')}</button
-								>
+								<div class="flex justify-center p-4">
+									<Button
+										className="text-white w-2/3 bg-red-800 hover:bg-red-700"
+										onClick={() => {
+											openDialog(stopRecordDialogId);
+										}}
+										>{$t('stopRecord')}
+									</Button>
+								</div>
 							{:else}
-								<button class="btn btn-primary w-full" onclick={() => startRecord(url)}
-									>{$t('startRecord')}</button
-								>
+								<div class="flex justify-center p-4">
+									<Button
+										className="text-black1 w-2/3 bg-white1 hover:bg-white"
+										onClick={() => startRecord(url)}>{$t('startRecord')}</Button
+									>
+								</div>
 							{/if}
 						</div>
 					{:else}
