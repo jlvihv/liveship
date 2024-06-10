@@ -14,6 +14,10 @@ liveship 本质上只是 ffmpeg 套壳，通过模拟请求获取直播流地址
 
 liveship 是一个基于 tauri 的桌面应用程序，您可以从 [release](https://github.com/jlvihv/liveship/releases/) 页面下载对应平台的二进制文件，然后安装运行。
 
+## 常见问题
+
+1. mac os 提示“文件已损坏，无法打开”：这是因为 mac os 限制了非 app store 的应用程序，您可以在终端中执行 `sudo xattr -d com.apple.quarantine /Applications/liveship.app` 命令解除限制。
+
 ## 特别鸣谢
 
 直播源解析的代码很大程度上参考了 [DouyinLiveRecorder](https://github.com/ihmily/DouyinLiveRecorder) 项目，在此致以诚挚的感谢。
