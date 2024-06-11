@@ -28,7 +28,6 @@ export async function getLiveInfoForXiaohongshu(url: string): Promise<LiveInfo> 
 		info.anchorName = json.data.host_info.nickname || '';
 		info.anchorAvatar = json.data.host_info.avatar || '';
 		info.roomCover = json.data.room.cover || '';
-		info.viewerCount = json.data.room.member_count || '';
 		info.title = json.data.room.name || '';
 		let url = `http://live-play.xhscdn.com/live/${roomId}.flv`;
 		info.streams.push({

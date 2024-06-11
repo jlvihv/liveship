@@ -22,7 +22,7 @@
 	"confirmInstallFFmpeg": "您可能没有安装 ffmpeg，是否为您自动安装？",
 	"no": "不",
 	"autoInstall": "自动安装",
-	"tips": "tips: 已支持抖音、虎牙、tiktok、twitch",
+	"tips": "tips: 已支持抖音、虎牙、小红书、tiktok、twitch",
 	"living": "正在直播",
 	"notLiving": "未直播",
 	"watching": " 在看",

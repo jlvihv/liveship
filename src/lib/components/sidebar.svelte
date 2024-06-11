@@ -1,6 +1,5 @@
 <script>
 	import { t } from '@/translations';
-	import { Toaster } from 'svelte-sonner';
 
 	let { currentPath = $bindable('new') } = $props();
 	let list = [
@@ -12,7 +11,7 @@
 </script>
 
 <nav
-	class="bg-black1 sticky top-0 flex h-screen w-[240px] flex-shrink-0 flex-col justify-between gap-4 p-4 text-white1"
+	class="sticky top-0 flex h-screen w-[240px] flex-shrink-0 flex-col justify-between gap-4 bg-black1 p-4 text-white1"
 	data-sveltekit-reload
 >
 	<div class="flex w-full flex-col gap-4 py-4">
@@ -43,7 +42,7 @@
 	<a
 		href="https://github.com/jlvihv/liveship"
 		target="_blank"
-		class="text-white2 flex items-center justify-between rounded-xl px-3 py-2 font-medium hover:bg-dark hover:text-white"
+		class="flex items-center justify-between rounded-xl px-3 py-2 font-medium text-white2 hover:bg-dark hover:text-white"
 	>
 		<span class="flex items-center justify-center gap-2">
 			<span class="icon-[icomoon-free--github] h-6 w-6"></span>
@@ -52,5 +51,3 @@
 		<span class="icon-[fluent--open-24-regular] h-4 w-4"></span>
 	</a>
 </nav>
-
-<Toaster />

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { Toaster } from 'svelte-sonner';
 	import Sidebar from '$lib/components/sidebar.svelte';
 	import NewRecord from '$lib/components/new-record.svelte';
 	import RecordList from '$lib/components/record-list.svelte';
