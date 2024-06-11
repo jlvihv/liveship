@@ -3,6 +3,7 @@ import { getLiveInfoForDouyin } from './platform/douyin';
 import { getLiveInfoForHuya } from './platform/huya';
 import { getLiveInfoForTiktok } from './platform/tiktok';
 import { getLiveInfoForTwitch } from './platform/twitch';
+import { getLiveInfoForXiaohongshu } from './platform/xiaohongshu';
 import { getLiveInfoForYoutube } from './platform/youtube';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -105,6 +106,8 @@ export function getPlatformIcon(platformKind: string): string {
 			return 'https://m.twitch.tv/favicon.ico?desktop-redirect=true';
 		case 'youtube':
 			return 'https://m.youtube.com/static/apple-touch-icon-72x72-precomposed.png';
+		case 'xiaohongshu':
+			return 'https://www.xiaohongshu.com/favicon.ico';
 		case 'tiktok':
 			return 'https://www.tiktok.com/favicon.ico';
 		default:
@@ -147,6 +150,8 @@ export async function getLiveInfoForPlatform(url: string): Promise<LiveInfo> {
 			return getLiveInfoForTwitch(url);
 		case PlatformKind.Youtube:
 			return getLiveInfoForYoutube(url);
+		case PlatformKind.Xiaohongshu:
+			return getLiveInfoForXiaohongshu(url);
 		default:
 			throw new Error('unknown platform');
 	}

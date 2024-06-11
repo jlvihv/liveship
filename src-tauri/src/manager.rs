@@ -124,7 +124,6 @@ pub mod record {
             eprintln!("Could not add live info: {}", e);
             e.to_string()
         })?;
-        println!("开始录制：{:#?} {:#?}", stream, live_info);
         inner::start_record_with_stream(stream, live_info)
             .await
             .map_err(|e| {
@@ -399,13 +398,39 @@ pub mod request_api {
             );
         }
 
-        let resp = request::get_with_headers(&url, header_map)
+        let resp = request::get(&url, header_map)
             .await
             .map_err(|e| format!("Could not request: {}", e))?
             .text()
             .await
             .map_err(|e| format!("Could not get text: {}", e))?;
         Ok(resp)
+    }
+
+    #[tauri::command]
+    pub async fn try_request_get_status(
+        url: String,
+        headers: JsonMap,
+        timeout: u64,
+    ) -> Result<u16, String> {
+        // 遍历 headers，转换成 HeaderMap
+        let headers = headers
+            .iter()
+            .map(|(k, v)| (k.as_str().into(), v.as_str().unwrap_or("").into()))
+            .collect::<Vec<(String, String)>>();
+        let mut header_map = reqwest::header::HeaderMap::new();
+        for (k, v) in headers {
+            header_map.insert(
+                reqwest::header::HeaderName::from_bytes(k.as_bytes()).map_err(|e| e.to_string())?,
+                reqwest::header::HeaderValue::from_str(&v).map_err(|e| e.to_string())?,
+            );
+        }
+
+        let resp = request::try_get(&url, header_map, timeout)
+            .await
+            .map_err(|e| format!("Could not request: {}", e))?;
+        let status = resp.status().as_u16();
+        Ok(status)
     }
 
     // post 请求

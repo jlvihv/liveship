@@ -48,6 +48,7 @@ pub fn run() {
             manager::ffmpeg_api::check_ffmpeg_availability,
             manager::ffmpeg_api::download_ffmpeg,
             manager::request_api::request,
+            manager::request_api::try_request_get_status,
             manager::request_api::request_post,
         ])
         .run(tauri::generate_context!())

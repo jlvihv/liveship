@@ -1,6 +1,7 @@
-import { LiveStatus, PlatformKind, StreamingProtocol, type LiveInfo, type Stream } from '@/model';
+import { LiveStatus, PlatformKind, StreamingProtocol, type LiveInfo } from '@/model';
+import { invoke } from '@tauri-apps/api/core';
 
-export function getLiveInfoForXiaohongshu(url: string, html: string): LiveInfo {
+export async function getLiveInfoForXiaohongshu(url: string): Promise<LiveInfo> {
 	let info: LiveInfo = {
 		url,
 		title: '',
@@ -12,49 +13,42 @@ export function getLiveInfoForXiaohongshu(url: string, html: string): LiveInfo {
 		platformKind: PlatformKind.Xiaohongshu,
 		status: LiveStatus.NotLive
 	};
-	// 取 appuid 字段的值
-	let appuid = url.split('appuid=')[1].split('&')[0] || '';
 	// 使用路径参数的方式，取 livestream 字段的值
 	let roomId = url.split('/livestream/')[1] || '';
 	// 取 livestream 后面的数字，后面可能是 ? 或者 /，所以再次 split
 	roomId = roomId.split('?')[0].split('/')[0] || '';
-	// let app_api = format!("https://www.xiaohongshu.com/api/sns/red/live/app/v1/ecology/outside/share_info?room_id={}", room_id);
 	let appApi = `https://www.xiaohongshu.com/api/sns/red/live/app/v1/ecology/outside/share_info?room_id=${roomId}`;
-	// let resp = request::get_with_headers(&app_api, Self::headers()?).await?;
-	// let body: JsonValue = serde_json::from_slice(&resp.bytes().await?)?;
-	// let anchor_name = body
-	//     .pointer("/data/host_info/nickname")
-	//     .unwrap_or(&JsonValue::Null)
-	//     .as_str()
-	//     .unwrap_or_default();
-	// let anchor_avatar = body
-	//     .pointer("/data/host_info/avatar")
-	//     .unwrap_or(&JsonValue::Null)
-	//     .as_str()
-	//     .unwrap_or_default()
-	//     .split("?")
-	//     .collect::<Vec<&str>>()[0];
-	// let room_cover = body
-	//     .pointer("/data/room/cover")
-	//     .unwrap_or(&JsonValue::Null)
-	//     .as_str()
-	//     .unwrap_or_default()
-	//     .split("?")
-	//     .collect::<Vec<&str>>()[0];
-	// let room_title = body
-	//     .pointer("/data/room/name")
-	//     .unwrap_or(&JsonValue::Null)
-	//     .as_str()
-	//     .unwrap_or_default();
-	// let flv_url = format!(
-	//     "http://live-play.xhscdn.com/live/{}.flv?uid={}",
-	//     room_id, appuid
-	// );
-
+	try {
+		let data = await invoke('request', { url: appApi, headers: getHeaders() });
+		let json = JSON.parse(data as string);
+		if (json.code != 0) {
+			console.error('xiaohongshu api error', json);
+			return info;
+		}
+		info.anchorName = json.data.host_info.nickname || '';
+		info.anchorAvatar = json.data.host_info.avatar || '';
+		info.roomCover = json.data.room.cover || '';
+		info.viewerCount = json.data.room.member_count || '';
+		info.title = json.data.room.name || '';
+		let url = `http://live-play.xhscdn.com/live/${roomId}.flv`;
+		info.streams.push({
+			protocol: StreamingProtocol.Flv,
+			url,
+			resolution: 'default'
+		});
+		// 请求该 url，如果返回 404，则说明未直播
+		let status = await invoke('try_request_get_status', { url, headers: getHeaders(), timeout: 1 });
+		if ((status as number) === 200) {
+			info.status = LiveStatus.Live;
+		}
+	} catch (e) {
+		console.error('get live info for xiaohongshu failed: ', e);
+		throw e;
+	}
 	return info;
 }
 
-export function getHeadersForXiaohongshu() {
+function getHeaders() {
 	return {
 		Accept: 'application/json, text/plain, */*',
 		'User-Agent':

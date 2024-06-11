@@ -29,7 +29,6 @@ export async function getLiveInfoForTiktok(url: string): Promise<LiveInfo> {
 
 // 解析 html，填充 LiveInfo
 function parseHtmlAndFillLiveInfo(html: string, info: LiveInfo) {
-	// match <script id="SIGI_STATE" type="application/json">(.*?)</script><script id="SIGI_RETRY" type="application/json">
 	let jsonStr = html.match(/<script id="SIGI_STATE" type="application\/json">(.*?)<\/script>/);
 	if (!jsonStr || jsonStr.length < 2) {
 		throw new Error('can not match json string');
