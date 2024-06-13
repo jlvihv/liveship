@@ -68,7 +68,6 @@ export type RecordingStrategy =
 	| { kind: 'AnchorLiveWithDuration'; value: [number] };
 
 export interface RecordingPlan {
-	id: number;
 	url: string;
 	streamProtocol: string;
 	streamResolution: string;
@@ -76,6 +75,7 @@ export interface RecordingPlan {
 	createdAt: number;
 	updatedAt: number;
 	liveInfo?: LiveInfo;
+	strategy: 'AnchorLive';
 }
 
 export interface AppConfig {

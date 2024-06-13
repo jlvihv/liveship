@@ -1,5 +1,6 @@
 import { LiveStatus, PlatformKind, StreamingProtocol, type LiveInfo, type Stream } from '@/model';
-import { addPluginListener, invoke } from '@tauri-apps/api/core';
+import { invoke } from '@tauri-apps/api/core';
+import { JSONPath } from 'jsonpath-plus';
 
 export async function getLiveInfoForYoutube(url: string): Promise<LiveInfo> {
 	let info: LiveInfo = {
@@ -14,32 +15,18 @@ export async function getLiveInfoForYoutube(url: string): Promise<LiveInfo> {
 		status: LiveStatus.NotLive
 	};
 	try {
-		// response = (await self.request(
-		//     method='POST',
-		//     url='https://www.youtube.com/youtubei/v1/browse',
-		//     params={
-		//         'key': 'AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8',
-		//         'prettyPrint': False
-		//     },
-		//     json={
-		//         'context': {
-		//             'client': {
-		//                 'hl': 'zh-CN',
-		//                 'clientName': 'MWEB',
-		//                 'clientVersion': '2.20230101.00.00',
-		//                 'timeZone': 'Asia/Shanghai'
-		//             }
-		//         },
-		//         'browseId': self.id,
-		//         'params': 'EgdzdHJlYW1z8gYECgJ6AA%3D%3D'
-		//     }
-		// )).json()
-		// jsonpath = parse('$..videoWithContextRenderer').find(response)
-
 		let videoId = url.split('v=')[1];
-		console.log('youtube', videoId);
+		console.log('youtube video id', videoId);
+
+		const embedUrl = `https://www.youtube.com/embed/${videoId}`;
+		let resp = await invoke('request', { url: embedUrl, headers: {} });
+		console.log('embed', resp);
+
+		let channelIdArray = (resp as string).match(/\\"channelId\\":\\"(.{24})\\"/);
+		let channelId = channelIdArray ? channelIdArray[1] : '';
+
 		const apiUrl =
-			'https://www.youtube.com/youtubei/v1/browse?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8&prettyPrint=false';
+			'https://www.youtube.com/youtubei/v1/browse?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8';
 		let response = await invoke('request_post', {
 			url: apiUrl,
 			headers: {},
@@ -52,18 +39,30 @@ export async function getLiveInfoForYoutube(url: string): Promise<LiveInfo> {
 						timeZone: 'Asia/Shanghai'
 					}
 				},
-				browseId: videoId,
+				browseId: channelId,
 				params: 'EgdzdHJlYW1z8gYECgJ6AA%3D%3D'
 			}
 		});
 		// match $..videoWithContextRenderer
-		console.log('youtube', response);
+		console.log('youtube api response', response);
+		let apiJson = JSON.parse(response as string);
+		console.log('youtube api response', apiJson);
+		let videoWithContextRederer = JSONPath({ path: '$..videoWithContextRenderer', json: apiJson });
+		console.log('videoWithContextRederer', videoWithContextRederer);
+		// 遍历 videoWithContextRederer，找到直播视频
+		for (let video of videoWithContextRederer) {
+		}
 
-		// 首先请求页面内容
-		// let data = await invoke('request', { url, headers: getHeaders() });
-		// let html = data as string;
-		// // 解析 html，填充 LiveInfo
-		// parseHtmlAndFillLiveInfo(html, info);
+		let channelUrl = `https://www.youtube.com/channel/${channelId}/videos`;
+		console.log('channel url', channelUrl);
+		let channelResp = await invoke('request', { url: channelUrl, headers: {} });
+		console.log('channel', channelResp);
+		//                 r'"gridVideoRenderer"((.(?!"gridVideoRenderer"))(?!"style":"UPCOMING"))+"label":"(LIVE|LIVE NOW|PREMIERING NOW)"([\s\S](?!"style":"UPCOMING"))+?("gridVideoRenderer"|</script>)',
+		let liveVideoArray = (channelResp as string).match(
+			/r'"gridVideoRenderer"((.(?!"gridVideoRenderer"))(?!"style":"UPCOMING"))+"label":"(LIVE|LIVE NOW|PREMIERING NOW)"([\s\S](?!"style":"UPCOMING"))+?("gridVideoRenderer"|<\/script>)/
+		);
+		console.log('liveVideoArray', liveVideoArray);
+		let liveVideo = liveVideoArray ? liveVideoArray[1] : '';
 	} catch (e) {
 		console.error('get live info for tiktok failed: ', e);
 		// 抛出一个错误

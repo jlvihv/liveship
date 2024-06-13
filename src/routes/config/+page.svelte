@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { fade } from 'svelte/transition';
+	import { fade, scale } from 'svelte/transition';
 	import type { AppConfig } from '$lib/model';
 	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { invoke } from '@tauri-apps/api/core';
 	import { t } from '@/translations';
+	import { backOut } from 'svelte/easing';
 
 	let config: AppConfig | undefined = $state();
 	let rawConfig: AppConfig | undefined = $state();
@@ -80,7 +81,10 @@
 </script>
 
 {#if config}
-	<div class="text-white2 grid gap-8 p-8">
+	<div
+		class="grid gap-8 p-8 text-white2"
+		transition:scale={{ duration: 300, easing: backOut, start: 0.9 }}
+	>
 		<label class="flex items-center gap-8">
 			{$t('language')}
 			<select

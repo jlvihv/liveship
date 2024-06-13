@@ -92,5 +92,12 @@
 	"notInPlan": "不在计划中",
 	"planDeleted": "已删除计划",
 	"planDeleteFailed": "删除计划失败",
-	"planAdded": "已添加计划"
+	"planAdded": "已添加计划",
+	"xiaohongshu": "小红书",
+	"streamForwardWarning": "警告：直播流转发是实验性功能，目前仅支持转发到小红书，且未来可能移除此功能。使用此功能可能导致您的平台账号被封禁，请谨慎使用。若您执意使用此功能，对您造成的任何损失，我概不负责。",
+	"startForward": "开始转发",
+	"streamPush": "直播推流",
+	"streamForward": "直播转发",
+	"planEnabled": "计划已启用",
+	"planDisabled": "计划已禁用"
 }

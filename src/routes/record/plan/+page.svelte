@@ -3,9 +3,11 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { onDestroy, onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
-	import Dialog from './dialog.svelte';
+	import Dialog from '$lib/components/dialog.svelte';
 	import { closeDialog, getPlatformIcon, openDialog } from '@/utils';
 	import { t } from '@/translations';
+	import { scale } from 'svelte/transition';
+	import { backIn, backInOut, backOut } from 'svelte/easing';
 
 	const deletePlanDialogId = 'deletePlan';
 	let list: RecordingPlan[] = $state([]);
@@ -86,7 +88,10 @@
 {/snippet}
 
 {#if list.length > 0}
-	<div class="text-white2 h-full w-full overflow-auto">
+	<div
+		class="h-full w-full overflow-auto text-white2"
+		transition:scale={{ duration: 300, easing: backOut, start: 0.9 }}
+	>
 		<table class="table">
 			<thead>
 				<tr>

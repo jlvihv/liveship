@@ -14,10 +14,12 @@
   "license": "MIT",
   "dependencies": {
     "@tauri-apps/api": "^2.0.0-beta.13",
+    "@tauri-apps/plugin-dialog": "^2.0.0-beta.5",
     "@tauri-apps/plugin-shell": "^2.0.0-beta.6",
     "@types/crypto-js": "^4.2.2",
     "crypto-js": "^4.2.0",
     "dayjs": "^1.11.11",
+    "jsonpath-plus": "^9.0.0",
     "svelte-sonner": "^0.3.24",
     "sveltekit-i18n": "^2.4.2"
   },
@@ -37,12 +39,12 @@
     "prettier": "^3.3.2",
     "prettier-plugin-svelte": "^3.2.4",
     "prettier-plugin-tailwindcss": "^0.5.14",
-    "svelte": "^5.0.0-next.153",
+    "svelte": "^5.0.0-next.154",
     "svelte-check": "^3.8.0",
     "tailwindcss": "^3.4.4",
     "tslib": "^2.6.3",
     "typescript": "^5.4.5",
     "unplugin-icons": "^0.19.0",
-    "vite": "^5.2.13"
+    "vite": "^5.3.0"
   }
 }

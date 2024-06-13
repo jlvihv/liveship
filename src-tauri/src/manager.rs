@@ -348,6 +348,8 @@ pub mod config {
 }
 
 pub mod ffmpeg_api {
+    use crate::media::{self, MediaInfo};
+
     use super::*;
 
     /// 检查 ffmpeg
@@ -376,6 +378,29 @@ pub mod ffmpeg_api {
         config.ffmpeg_path = path.clone();
         kv::config::set(&config).map_err(|e| format!("Could not set config: {}", e))?;
         Ok(path)
+    }
+
+    /// 执行 ffmpeg 命令
+    #[tauri::command]
+    pub async fn execute_ffmpeg_command(ffmpeg_command: Vec<String>) -> Result<(), String> {
+        ffmpeg::execute_ffmpeg_command(ffmpeg_command)
+            .map_err(|e| format!("Could not run ffmpeg command: {}", e))?;
+        Ok(())
+    }
+
+    #[tauri::command]
+    pub async fn execute_ffmpeg_command_return_output(
+        ffmpeg_command: Vec<String>,
+    ) -> Result<String, String> {
+        let output = ffmpeg::execute_ffmpeg_command_return_output(ffmpeg_command)
+            .map_err(|e| format!("Could not run ffmpeg command: {}", e))?;
+        Ok(output)
+    }
+
+    #[tauri::command]
+    pub async fn get_image_info(file_path: String) -> Result<MediaInfo, String> {
+        let info = media::get_image_info(&file_path)?;
+        Ok(info)
     }
 }
 

@@ -92,5 +92,12 @@
 	"notInPlan": "Not in plan",
 	"planDeleted": "Plan deleted",
 	"planDeleteFailed": "Failed to delete plan",
-	"planAdded": "Plan added"
+	"planAdded": "Plan added",
+	"xiaohongshu": "Xiaohongshu",
+	"streamForwardWarning": "Warning: Stream forwarding is an experimental feature, currently only supports forwarding to Xiaohongshu, and this feature may be removed in the future. Using this feature may cause your platform account to be banned, please use it with caution. I am not responsible for any losses caused by using this feature.",
+	"startForward": "Start forwarding",
+	"streamPush": "Stream push",
+	"streamForward": "Stream forward",
+	"planEnabled": "Plan enabled",
+	"planDisabled": "Plan disabled"
 }

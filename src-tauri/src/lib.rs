@@ -5,6 +5,7 @@ mod config;
 mod ffmpeg;
 pub mod kv;
 mod manager;
+mod media;
 mod model;
 mod request;
 mod utils;
@@ -12,6 +13,7 @@ mod utils;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let main_window = app.get_webview_window("main").unwrap();
             main_window.on_window_event(|event| match event {
@@ -47,6 +49,9 @@ pub fn run() {
             manager::ffmpeg_api::check_ffmpeg_version,
             manager::ffmpeg_api::check_ffmpeg_availability,
             manager::ffmpeg_api::download_ffmpeg,
+            manager::ffmpeg_api::execute_ffmpeg_command,
+            manager::ffmpeg_api::execute_ffmpeg_command_return_output,
+            manager::ffmpeg_api::get_image_info,
             manager::request_api::request,
             manager::request_api::try_request_get_status,
             manager::request_api::request_post,

@@ -1,14 +1,16 @@
 <script lang="ts">
 	import { RecordingStatus, type RecordingHistory, type RecordingPlan } from '$lib/model';
+	import { scale } from 'svelte/transition';
 	import { onDestroy, onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import dayjs from 'dayjs';
 	import relativeTime from 'dayjs/plugin/relativeTime';
 	import 'dayjs/locale/zh-cn';
-	import Dialog from './dialog.svelte';
+	import Dialog from '$lib/components/dialog.svelte';
 	import { closeDialog, openDialog, formatFileSize, getPlatformIcon } from '$lib/utils';
 	import { invoke } from '@tauri-apps/api/core';
 	import { t } from '@/translations';
+	import { backOut } from 'svelte/easing';
 	dayjs.extend(relativeTime);
 
 	// icon fluent 28
@@ -208,7 +210,10 @@
 {/snippet}
 
 {#if list.length > 0}
-	<div class="text-white2 overflow-auto">
+	<div
+		class="overflow-auto text-white2"
+		transition:scale={{ duration: 300, easing: backOut, start: 0.9 }}
+	>
 		<table class="table">
 			<thead>
 				<tr>

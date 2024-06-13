@@ -3,10 +3,12 @@ import { LiveStatus, type RecordingPlan } from './model';
 import { getLiveInfoForPlatform } from './utils';
 
 export function checkPlanLoop() {
-	// 每 60 秒检查一次计划
+	// 进入时立刻检查一次计划
+	checkPlans();
+	// 然后每 60 秒检查一次
 	setInterval(() => {
 		checkPlans();
-	}, 6000);
+	}, 60000);
 }
 
 function checkPlans() {

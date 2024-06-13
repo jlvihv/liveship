@@ -5,6 +5,55 @@ use std::process::{Child, Stdio};
 
 use crate::config::config_dir;
 
+/// 给定 ffmpeg 命令，这里只负责执行
+pub fn execute_ffmpeg_command(ffmpeg_command: Vec<String>) -> Result<Child> {
+    println!("ffmpeg_command: {:?}", ffmpeg_command);
+    // 调用 ffmpeg 命令
+    let mut cmd = std::process::Command::new("ffmpeg");
+    // 特定于 windows 的实现，使用 CommandExt，避免出现黑窗口
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+    // cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
+    cmd.args(&ffmpeg_command);
+    let mut child = cmd.spawn()?;
+    // 立刻 try_wait 一下，看是否有错误
+    if let Some(status) = child.try_wait()? {
+        let output = child.wait_with_output()?;
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let error_message = format!(
+            "status: {:?}\nstdout: {}\nstderr: {}",
+            status, stdout, stderr
+        );
+        return Err(anyhow::anyhow!(error_message));
+    }
+    println!("录制进程启动：{:?}", child.id());
+    Ok(child)
+}
+
+/// 给定 ffmpeg 命令，执行并返回输出
+pub fn execute_ffmpeg_command_return_output(ffmpeg_command: Vec<String>) -> Result<String> {
+    println!("ffmpeg_command: {:?}", ffmpeg_command);
+    // 调用 ffmpeg 命令
+    let output = std::process::Command::new("ffmpeg")
+        .args(&ffmpeg_command)
+        .output()?;
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    if !output.status.success() {
+        return Err(anyhow::anyhow!(
+            "status: {:?}\nstdout: {}\nstderr: {}",
+            output.status,
+            stdout,
+            stderr
+        ));
+    }
+    Ok(stdout.to_string())
+}
+
 pub fn record(ffmpeg_path: &str, url: &str, filename: &str) -> Result<Child> {
     println!("开始录制：{} -> {}", url, filename);
 
@@ -17,7 +66,7 @@ pub fn record(ffmpeg_path: &str, url: &str, filename: &str) -> Result<Child> {
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
     cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
-    let ffmpeg_command = build_ffmpeg_command(url, filename);
+    let ffmpeg_command = build_ffmpeg_record_command(url, filename);
     cmd.args(&ffmpeg_command);
     let mut child = cmd.spawn()?;
     // 立刻 try_wait 一下，看是否有错误
@@ -40,7 +89,7 @@ pub fn record(ffmpeg_path: &str, url: &str, filename: &str) -> Result<Child> {
     Ok(child)
 }
 
-fn build_ffmpeg_command(url: &str, filename: &str) -> Vec<String> {
+fn build_ffmpeg_record_command(url: &str, filename: &str) -> Vec<String> {
     let user_agent = r#""Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36""#;
     let analyzeduration = "20000000";
     let probesize = "10000000";
