@@ -6,7 +6,6 @@ use crate::{
     model::{JsonMap, JsonValue, RecordStatus, RecordingHistory, RecordingPlan},
     request, utils,
 };
-use chrono::Utc;
 use dashmap::DashMap;
 use ffmpeg_sidecar::version::ffmpeg_version_with_path;
 use once_cell::sync::Lazy;
@@ -301,10 +300,8 @@ pub mod history {
                     .len();
                 history.file_size = file_size;
             } else {
-                // 当开始录制于 20 秒前，但文件不存在，我们认为文件已经被删除
-                if Utc::now().timestamp_millis() - history.start_time > 20000 {
-                    history.deleted = true;
-                }
+                // 如果文件不存在，我们认为文件已经被删除
+                history.deleted = true;
             }
         }
         Ok(histories)

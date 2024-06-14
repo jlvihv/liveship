@@ -99,5 +99,11 @@
 	"streamPush": "Stream push",
 	"streamForward": "Stream forward",
 	"planEnabled": "Plan enabled",
-	"planDisabled": "Plan disabled"
+	"planDisabled": "Plan disabled",
+	"Douyin": "Douyin",
+	"Tiktok": "Tiktok",
+	"Twitch": "Twitch",
+	"Huya": "HuYa",
+	"Youtube": "Youtube",
+	"Xiaohongshu": "XiaoHongShu"
 }

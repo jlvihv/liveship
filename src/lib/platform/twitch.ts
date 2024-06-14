@@ -1,5 +1,5 @@
 import { LiveStatus, PlatformKind, StreamingProtocol, type LiveInfo, type Stream } from '@/model';
-import { invoke } from '@tauri-apps/api/core';
+import { fetch } from '@tauri-apps/plugin-http';
 
 export async function getLiveInfoForTwitch(url: string): Promise<LiveInfo> {
 	let info: LiveInfo = {
@@ -13,13 +13,13 @@ export async function getLiveInfoForTwitch(url: string): Promise<LiveInfo> {
 		platformKind: PlatformKind.Twitch,
 		status: LiveStatus.NotLive
 	};
-	// 先找出 uid, 从 url 中提取, 例如 https://www.twitch.tv/uid
+	// 先找出 uid, 从 url 中提取，例如 https://www.twitch.tv/uid
 	let uid = url.split('/').pop();
 	try {
-		let jsonStr1 = await invoke('request_post', {
-			url: 'https://gql.twitch.tv/gql',
+		let resp = await fetch('https://gql.twitch.tv/gql', {
+			method: 'POST',
 			headers: getHeadersForStream(),
-			body: {
+			body: JSON.stringify({
 				operationName: 'PlaybackAccessToken_Template',
 				query:
 					'query PlaybackAccessToken_Template($login: String!, $isLive: Boolean!, $vodID: ID!, $isVod: Boolean!, $playerType: String!) {  streamPlaybackAccessToken(channelName: $login, params: {platform: "web", playerBackend: "mediaplayer", playerType: $playerType}) @include(if: $isLive) {    value    signature   authorization { isForbidden forbiddenReasonCode }   __typename  }  videoPlaybackAccessToken(id: $vodID, params: {platform: "web", playerBackend: "mediaplayer", playerType: $playerType}) @include(if: $isVod) {    value    signature   __typename  }}',
@@ -30,15 +30,15 @@ export async function getLiveInfoForTwitch(url: string): Promise<LiveInfo> {
 					vodID: '',
 					playerType: 'site'
 				}
-			}
+			})
 		});
-		let jsonData1 = JSON.parse(jsonStr1 as string);
+		let jsonData1 = JSON.parse(await resp.text());
 		let token = jsonData1.data.streamPlaybackAccessToken.value;
 		let sign = jsonData1.data.streamPlaybackAccessToken.signature;
-		let jsonStr = await invoke('request_post', {
-			url: 'https://gql.twitch.tv/gql',
+		let resp2 = await fetch('https://gql.twitch.tv/gql', {
+			method: 'POST',
 			headers: getHeaders(token),
-			body: [
+			body: JSON.stringify([
 				{
 					operationName: 'ChannelShell',
 					variables: {
@@ -51,9 +51,9 @@ export async function getLiveInfoForTwitch(url: string): Promise<LiveInfo> {
 						}
 					}
 				}
-			]
+			])
 		});
-		let json = JSON.parse(jsonStr as string);
+		let json = JSON.parse(await resp2.text());
 		await parseJsonAndFillLiveInfo(json, info, sign, token);
 	} catch (e) {
 		console.error('get live info for twitch failed: ', e);
@@ -139,15 +139,15 @@ async function parseJsonAndFillLiveInfo(json: any, info: LiveInfo, sign: string,
 
 async function getPlayUrlList(m3u8: string, headers: any) {
 	try {
-		let resp = await invoke('request', {
-			url: m3u8,
+		let resp = await fetch(m3u8, {
+			method: 'GET',
 			headers
 		});
 		let playUrlList = [];
 		// 找 GROUP-ID= 字样，这是分辨率
 		let groupPattern = /GROUP-ID="([^"]+)"/;
 		let groupId: string = '';
-		for (let line of (resp as string).split('\n')) {
+		for (let line of (await resp.text()).split('\n')) {
 			if (groupPattern.test(line)) {
 				groupId = line.match(groupPattern)![0];
 			}

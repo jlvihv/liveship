@@ -7,7 +7,7 @@
 	import { closeDialog, getPlatformIcon, openDialog } from '@/utils';
 	import { t } from '@/translations';
 	import { scale } from 'svelte/transition';
-	import { backIn, backInOut, backOut } from 'svelte/easing';
+	import { backOut } from 'svelte/easing';
 
 	const deletePlanDialogId = 'deletePlan';
 	let list: RecordingPlan[] = $state([]);
@@ -84,7 +84,9 @@
 </script>
 
 {#snippet icon(platformKind:string)}
-	<img class="h-6 w-6" src={getPlatformIcon(platformKind)} alt={platformKind} />
+	<div class="flex justify-center">
+		<img class="h-6 w-6" src={getPlatformIcon(platformKind)} alt={platformKind} />
+	</div>
 {/snippet}
 
 {#if list.length > 0}
@@ -95,18 +97,38 @@
 		<table class="table">
 			<thead>
 				<tr>
-					<th>{$t('platform')}</th>
+					<th class="text-center">{$t('status')}</th>
+					<th class="text-center">{$t('platform')}</th>
 					<th class="min-w-20">{$t('anchor')}</th>
 					<th>{$t('liveAddress')}</th>
 					<th>{$t('type')}</th>
 					<th>{$t('resolution')}</th>
-					<th>{$t('status')}</th>
 					<th>{$t('action')}</th>
 				</tr>
 			</thead>
 			<tbody>
 				{#each list as row}
 					<tr>
+						<td>
+							{#if row.enabled}
+								<button
+									class="tooltip w-full cursor-pointer text-green-500"
+									data-tip={$t('clickToDisable')}
+									onclick={() => updatePlanStatus(row.url, false)}
+								>
+									<span class="icon-[fluent--checkmark-circle-24-regular] h-6 w-6"></span>
+								</button>
+							{:else}
+								<button
+									class="tooltip w-full cursor-pointer"
+									data-tip={$t('clickToEnable')}
+									onclick={() => updatePlanStatus(row.url, true)}
+								>
+									<span class="icon-[fluent--dismiss-circle-28-regular] h-6 w-6 hover:text-white"
+									></span>
+								</button>
+							{/if}
+						</td>
 						<td>
 							{#if row.liveInfo?.platformKind}
 								{@render icon(row.liveInfo?.platformKind)}
@@ -126,26 +148,6 @@
 						</td>
 						<td>{row.streamProtocol}</td>
 						<td>{row.streamResolution !== '' ? row.streamResolution : $t('auto')}</td>
-						<td>
-							{#if row.enabled}
-								<button
-									class="tooltip cursor-pointer text-green-500"
-									data-tip={$t('clickToDisable')}
-									onclick={() => updatePlanStatus(row.url, false)}
-								>
-									<span class="icon-[fluent--checkmark-circle-24-regular] h-6 w-6"></span>
-								</button>
-							{:else}
-								<button
-									class="tooltip cursor-pointer"
-									data-tip={$t('clickToEnable')}
-									onclick={() => updatePlanStatus(row.url, true)}
-								>
-									<span class="icon-[fluent--dismiss-circle-28-regular] h-6 w-6 hover:text-white"
-									></span>
-								</button>
-							{/if}
-						</td>
 						<td
 							><button
 								class="tooltip"

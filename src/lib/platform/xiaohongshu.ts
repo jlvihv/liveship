@@ -1,5 +1,6 @@
 import { LiveStatus, PlatformKind, StreamingProtocol, type LiveInfo } from '@/model';
 import { invoke } from '@tauri-apps/api/core';
+import { fetch } from '@tauri-apps/plugin-http';
 
 export async function getLiveInfoForXiaohongshu(url: string): Promise<LiveInfo> {
 	let info: LiveInfo = {
@@ -19,8 +20,11 @@ export async function getLiveInfoForXiaohongshu(url: string): Promise<LiveInfo> 
 	roomId = roomId.split('?')[0].split('/')[0] || '';
 	let appApi = `https://www.xiaohongshu.com/api/sns/red/live/app/v1/ecology/outside/share_info?room_id=${roomId}`;
 	try {
-		let data = await invoke('request', { url: appApi, headers: getHeaders() });
-		let json = JSON.parse(data as string);
+		let resp = await fetch(appApi, {
+			method: 'GET',
+			headers: getHeaders()
+		});
+		let json = JSON.parse(await resp.text());
 		if (json.code != 0) {
 			console.error('xiaohongshu api error', json);
 			return info;
@@ -36,6 +40,12 @@ export async function getLiveInfoForXiaohongshu(url: string): Promise<LiveInfo> 
 			resolution: 'default'
 		});
 		// 请求该 url，如果返回 404，则说明未直播
+		// let resp2 = await fetch(url, {
+		// 	method: 'GET',
+		// 	headers: getHeaders(),
+		// 	connectTimeout: 1000
+		// });
+		// if (resp2.status === 200) {
 		let status = await invoke('try_request_get_status', { url, headers: getHeaders(), timeout: 1 });
 		if ((status as number) === 200) {
 			info.status = LiveStatus.Live;

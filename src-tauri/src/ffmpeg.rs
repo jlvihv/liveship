@@ -66,7 +66,7 @@ pub fn record(ffmpeg_path: &str, url: &str, filename: &str) -> Result<Child> {
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
     cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
-    let ffmpeg_command = build_ffmpeg_record_command(url, filename);
+    let ffmpeg_command = build_ffmpeg_record_command(url, filename, None);
     cmd.args(&ffmpeg_command);
     let mut child = cmd.spawn()?;
     // 立刻 try_wait 一下，看是否有错误
@@ -89,7 +89,7 @@ pub fn record(ffmpeg_path: &str, url: &str, filename: &str) -> Result<Child> {
     Ok(child)
 }
 
-fn build_ffmpeg_record_command(url: &str, filename: &str) -> Vec<String> {
+fn build_ffmpeg_record_command(url: &str, filename: &str, proxy: Option<String>) -> Vec<String> {
     let user_agent = r#""Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36""#;
     let analyzeduration = "20000000";
     let probesize = "10000000";
@@ -132,11 +132,84 @@ fn build_ffmpeg_record_command(url: &str, filename: &str) -> Vec<String> {
         "-correct_ts_overflow",
         "1",
     ];
+    if let Some(proxy) = &proxy {
+        ffmpeg_command.extend_from_slice(&["-http_proxy", proxy.as_str()] as &[&str]);
+    }
     let push_command = [
         "-c:v", "copy", "-c:a", "copy", "-map", "0", "-f", "mpegts", filename,
     ];
     ffmpeg_command.extend_from_slice(&push_command);
     ffmpeg_command.into_iter().map(|s| s.into()).collect()
+}
+
+/// 使用 ffmpeg 转换 ts 为 mp4
+#[allow(unused)]
+pub fn convert_ts_to_mp4(ts_file: &str, delete_origin_file: bool) -> Result<()> {
+    // 判断是否以 ts 结尾
+    if !ts_file.ends_with(".ts") {
+        return Err(anyhow!("file is not end with .ts"));
+    }
+    // 检查文件是否存在
+    if !std::path::Path::new(ts_file).exists() {
+        return Err(anyhow!("file not exists"));
+    }
+    // 替换文件后缀，生成 mp4 文件名，替换最后的 '.ts' 为 '.mp4'
+    let mp4_file = ts_file.replace(".ts", ".mp4");
+    let ffmpeg_command = vec![
+        "-i",
+        ts_file,
+        "-c:v",
+        "copy",
+        "-c:a",
+        "copy",
+        "-f",
+        "mp4",
+        mp4_file.as_str(),
+    ]
+    .iter()
+    .map(|s| s.to_string())
+    .collect();
+    execute_ffmpeg_command_return_output(ffmpeg_command)?;
+    if delete_origin_file {
+        std::fs::remove_file(ts_file)?;
+    }
+    Ok(())
+}
+
+/// 转换为 m4a
+#[allow(unused)]
+pub fn convert_ts_to_m4a(ts_file: &str, delete_origin_file: bool) -> Result<()> {
+    // 判断是否以 ts 结尾
+    if !ts_file.ends_with(".ts") {
+        return Err(anyhow!("file is not end with .ts"));
+    }
+    // 检查文件是否存在
+    if !std::path::Path::new(ts_file).exists() {
+        return Err(anyhow!("file not exists"));
+    }
+    // 替换文件后缀，生成 m4a 文件名，替换最后的 '.ts' 为 '.m4a'
+    let m4a_file = ts_file.replace(".ts", ".m4a");
+    let ffmpeg_command = vec![
+        "-i",
+        ts_file,
+        "-n",
+        "-vn",
+        "-c:a",
+        "aac",
+        "-bsf:a",
+        "aac_adtstoasc",
+        "-ab",
+        "320k",
+        m4a_file.as_str(),
+    ]
+    .iter()
+    .map(|s| s.to_string())
+    .collect();
+    execute_ffmpeg_command_return_output(ffmpeg_command)?;
+    if delete_origin_file {
+        std::fs::remove_file(ts_file)?;
+    }
+    Ok(())
 }
 
 /// 自动下载对应平台的 ffmpeg

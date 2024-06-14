@@ -1,5 +1,6 @@
 import { LiveStatus, PlatformKind, StreamingProtocol, type LiveInfo } from '@/model';
-import { invoke } from '@tauri-apps/api/core';
+// import { invoke } from '@tauri-apps/api/core';
+import { fetch } from '@tauri-apps/plugin-http';
 
 export async function getLiveInfoForDouyin(url: string): Promise<LiveInfo> {
 	let info: LiveInfo = {
@@ -15,8 +16,11 @@ export async function getLiveInfoForDouyin(url: string): Promise<LiveInfo> {
 	};
 	try {
 		// 首先请求页面内容
-		const data = await invoke('request', { url, headers: getHeaders() });
-		let html = data as string;
+		const resp = await fetch(url, {
+			method: 'GET',
+			headers: getHeaders()
+		});
+		let html = await resp.text();
 		// 解析 html，填充 LiveInfo
 		parseHtmlAndFillLiveInfo(html, info);
 	} catch (e) {

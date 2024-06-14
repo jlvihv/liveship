@@ -1,6 +1,6 @@
-import { LiveStatus, PlatformKind, StreamingProtocol, type LiveInfo, type Stream } from '@/model';
-import { invoke } from '@tauri-apps/api/core';
+import { LiveStatus, PlatformKind, StreamingProtocol, type LiveInfo } from '@/model';
 import CryptoJS from 'crypto-js';
+import { fetch } from '@tauri-apps/plugin-http';
 
 export async function getLiveInfoForHuya(url: string): Promise<LiveInfo> {
 	let info: LiveInfo = {
@@ -17,8 +17,11 @@ export async function getLiveInfoForHuya(url: string): Promise<LiveInfo> {
 
 	try {
 		// 首先请求页面内容
-		let data = await invoke('request', { url, headers: getHeaders() });
-		let html = data as string;
+		let resp = await fetch(url, {
+			method: 'GET',
+			headers: getHeaders()
+		});
+		let html = await resp.text();
 		// 解析 html，填充 LiveInfo
 		parseHtmlAndFillLiveInfo(html, info);
 	} catch (e) {

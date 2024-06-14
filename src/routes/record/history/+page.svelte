@@ -206,7 +206,9 @@
 </Dialog>
 
 {#snippet icon(platformKind:string)}
-	<img class="h-6 w-6" src={getPlatformIcon(platformKind)} alt={platformKind} />
+	<div class="flex justify-center">
+		<img class="h-6 w-6" src={getPlatformIcon(platformKind)} alt={platformKind} />
+	</div>
 {/snippet}
 
 {#if list.length > 0}
@@ -218,7 +220,7 @@
 			<thead>
 				<tr>
 					<th class="text-center">{$t('status')}</th>
-					<th>{$t('platform')}</th>
+					<th class="text-center">{$t('platform')}</th>
 					<th>{$t('anchor')}</th>
 					<th>{$t('liveAddress')}</th>
 					<th>{$t('duration')}</th>
@@ -247,7 +249,11 @@
 						<td>
 							{@render icon(row.liveInfo?.platformKind || '')}
 						</td>
-						<td>{row.liveInfo?.anchorName}</td>
+						<td>
+							<p class="w-32 truncate">
+								{row.liveInfo?.anchorName}
+							</p>
+						</td>
 						<td
 							><a
 								href={row.url}

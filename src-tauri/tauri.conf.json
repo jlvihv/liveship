@@ -1,6 +1,6 @@
 {
 	"productName": "liveship",
-	"version": "0.1.16",
+	"version": "0.1.17",
 	"identifier": "app.happyship.liveship",
 	"build": {
 		"beforeDevCommand": "bun run dev",
@@ -12,10 +12,10 @@
 		"windows": [
 			{
 				"title": "liveship",
-				"width": 1000,
-				"height": 600,
-				"minWidth": 1000,
-				"minHeight": 600,
+				"width": 1100,
+				"height": 700,
+				"minWidth": 1100,
+				"minHeight": 700,
 				"theme": "Dark"
 			}
 		],

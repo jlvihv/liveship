@@ -99,5 +99,11 @@
 	"streamPush": "直播推流",
 	"streamForward": "直播转发",
 	"planEnabled": "计划已启用",
-	"planDisabled": "计划已禁用"
+	"planDisabled": "计划已禁用",
+	"Douyin": "抖音",
+	"Tiktok": "Tiktok",
+	"Twitch": "Twitch",
+	"Huya": "虎牙",
+	"Youtube": "Youtube",
+	"Xiaohongshu": "小红书"
 }
