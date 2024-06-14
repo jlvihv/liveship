@@ -1,6 +1,6 @@
 [package]
 name = "liveship"
-version = "0.1.18"
+version = "0.1.17"
 description = "liveship 是一个直播录制工具，目前已支持抖音、虎牙、小红书、tiktok、twitch"
 authors = ["jlvihv"]
 email = "imvihv@gmail.com"
