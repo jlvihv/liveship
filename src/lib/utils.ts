@@ -1,6 +1,7 @@
 import { PlatformKind, type LiveInfo } from './model';
 import { getLiveInfoForDouyin } from './platform/douyin';
 import { getLiveInfoForHuya } from './platform/huya';
+import { getLiveInfoForKuaishou } from './platform/kuaishou';
 import { getLiveInfoForTiktok } from './platform/tiktok';
 import { getLiveInfoForTwitch } from './platform/twitch';
 import { getLiveInfoForXiaohongshu } from './platform/xiaohongshu';
@@ -39,34 +40,6 @@ export function throttle<F extends (...args: any[]) => any>(
 		lastCall = now;
 		fn(...args);
 	};
-}
-
-// 获取分辨率的中文表示
-export function getResolutionName(resolution: string) {
-	switch (resolution.toLowerCase()) {
-		case 'full_hd1':
-		case 'origin':
-			return '原画';
-		case 'hd1':
-		case 'uhd':
-		case 'hd':
-			return '超清';
-		case 'hd-60':
-			return '超清 60 帧';
-		case 'sd1':
-			return '高清';
-		case 'sd2':
-		case 'sd':
-			return '标清';
-		case 'ld':
-			return '流畅';
-		case 'default':
-			return '默认';
-		case 'ao':
-			return '仅音频';
-		default:
-			return resolution;
-	}
 }
 
 // 格式化显示文件尺寸
@@ -131,6 +104,8 @@ export function getPlatformKind(url: string): PlatformKind {
 			return PlatformKind.Twitch;
 		case url.startsWith('https://www.youtube.com/watch?v='):
 			return PlatformKind.Youtube;
+		case url.startsWith(''):
+			return PlatformKind.Kuaishou;
 		default:
 			return PlatformKind.Unknown;
 	}
@@ -152,6 +127,8 @@ export async function getLiveInfoForPlatform(url: string): Promise<LiveInfo> {
 			return getLiveInfoForYoutube(url);
 		case PlatformKind.Xiaohongshu:
 			return getLiveInfoForXiaohongshu(url);
+		case PlatformKind.Kuaishou:
+		  return getLiveInfoForKuaishou(url);
 		default:
 			throw new Error('unknown platform');
 	}

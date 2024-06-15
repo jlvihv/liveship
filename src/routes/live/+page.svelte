@@ -6,15 +6,19 @@
 	import { scale } from 'svelte/transition';
 	import { backOut } from 'svelte/easing';
 	import { onMount } from 'svelte';
+	import { Command } from '@tauri-apps/plugin-shell';
 
 	const xiaohongshuPushServer = 'rtmp://live-push.xhscdn.com/live';
 	let key = $state('');
 	let inputFile = $state('');
 	let visible = $state(false);
 
-	onMount(() => {
+	onMount(async () => {
 		visible = true;
+		let result = await Command.create('exec-sh', ['-c', "echo 'hello world'"]).execute();
+		console.log('result: ', result);
 	});
+
 	async function push() {
 		try {
 			let info = await getImageInfo(inputFile);

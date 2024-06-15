@@ -1,6 +1,6 @@
 import { LiveStatus, PlatformKind, StreamingProtocol, type LiveInfo, type Stream } from '@/model';
 
-export function getLiveInfoForKuaishou(url: string, html: string): LiveInfo {
+export function getLiveInfoForBilibili(url: string, html: string): LiveInfo {
 	let info: LiveInfo = {
 		url,
 		title: '',

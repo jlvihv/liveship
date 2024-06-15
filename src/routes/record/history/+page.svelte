@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { RecordingStatus, type RecordingHistory, type RecordingPlan } from '$lib/model';
+	import Button from '$lib/components/button.svelte';
 	import { scale } from 'svelte/transition';
 	import { onDestroy, onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
@@ -146,26 +147,20 @@
 	id={stopRecordDialogId}
 	text={stopRecordParams?.inPlan ? $t('confirmStopRecordAndDisablePlan') : $t('confirmStopRecord')}
 >
-	<button
-		class="btn w-24 rounded-xl"
-		onclick={() => {
+	<Button
+		white
+		onClick={() => {
 			closeDialog(stopRecordDialogId);
 			stopRecordParams = undefined;
-		}}>{$t('cancel')}</button
+		}}>{$t('cancel')}</Button
 	>
 	{#if stopRecordParams?.inPlan}
-		<button
-			class="btn w-36 rounded-xl"
-			onclick={() => stopRecord(stopRecordParams?.url || '', true)}
-			>{$t('stopRecordAndDisablePlan')}</button
+		<Button red onClick={() => stopRecord(stopRecordParams?.url || '', true)}
+			>{$t('stopRecordAndDisablePlan')}</Button
 		>
 	{/if}
-	<!-- svelte-ignore a11y_autofocus -->
-	<button
-		autofocus
-		class="btn w-32 rounded-xl"
-		onclick={() => stopRecord(stopRecordParams?.url || '', false)}
-		>{stopRecordParams?.inPlan ? $t('onlyStopRecord') : $t('confirm')}</button
+	<Button autoFocus red onClick={() => stopRecord(stopRecordParams?.url || '', false)}
+		>{stopRecordParams?.inPlan ? $t('onlyStopRecord') : $t('confirm')}</Button
 	>
 </Dialog>
 
@@ -173,35 +168,36 @@
 	id={deleteHistoryDialogId}
 	text={deleteHistoryParams?.deleted ? $t('confirmDeleteRecord') : $t('deleteRecordOnlyOrFile')}
 >
-	<button
-		class="btn w-24 rounded-xl"
-		onclick={() => {
+	<Button
+		white
+		className=""
+		onClick={() => {
 			closeDialog(deleteHistoryDialogId);
 			deleteHistoryParams = undefined;
-		}}>{$t('cancel')}</button
+		}}>{$t('cancel')}</Button
 	>
 	{#if !deleteHistoryParams?.deleted}
-		<button
-			class="btn w-32 rounded-xl"
-			onclick={() => deleteHistory(
+		<Button
+			red
+			onClick={() => deleteHistory(
 			  deleteHistoryParams!.url,
     deleteHistoryParams!.startTime,
     true
 			)}
-			>{$t('deleteRecordAndFile')}</button
+			>{$t('deleteRecordAndFile')}</Button
 		>
 	{/if}
 	<!-- svelte-ignore a11y_autofocus -->
-	<button
-		autofocus
-		class="btn w-32 rounded-xl"
-		onclick={() =>
+	<Button
+		autoFocus
+		red
+		onClick={() =>
 			deleteHistory(
 				deleteHistoryParams!.url,
 				deleteHistoryParams!.startTime,
 				false
 			)}
-		>{deleteHistoryParams?.deleted ? $t('confirm') : $t('deleteRecordOnly')}</button
+		>{deleteHistoryParams?.deleted ? $t('confirm') : $t('deleteRecordOnly')}</Button
 	>
 </Dialog>
 
@@ -275,7 +271,7 @@
 							{#if !row.deleted}
 								<button
 									onclick={() => openInFolder(row.path)}
-									class="tooltip text-left hover:text-white1"
+									class="tooltip text-left hover:text-white"
 									data-tip={$t('openInFileManager')}
 								>
 									<span class="icon-[fluent--folder-32-regular] h-6 w-6"></span>

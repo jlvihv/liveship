@@ -1,6 +1,7 @@
 import { LiveStatus, PlatformKind, StreamingProtocol, type LiveInfo, type Stream } from '@/model';
 import { invoke } from '@tauri-apps/api/core';
 import { JSONPath } from 'jsonpath-plus';
+import { fetch } from '@tauri-apps/plugin-http';
 
 export async function getLiveInfoForYoutube(url: string): Promise<LiveInfo> {
 	let info: LiveInfo = {
@@ -17,52 +18,89 @@ export async function getLiveInfoForYoutube(url: string): Promise<LiveInfo> {
 	try {
 		let videoId = url.split('v=')[1];
 		console.log('youtube video id', videoId);
-
-		const embedUrl = `https://www.youtube.com/embed/${videoId}`;
-		let resp = await invoke('request', { url: embedUrl, headers: {} });
-		console.log('embed', resp);
-
-		let channelIdArray = (resp as string).match(/\\"channelId\\":\\"(.{24})\\"/);
-		let channelId = channelIdArray ? channelIdArray[1] : '';
-
-		const apiUrl =
-			'https://www.youtube.com/youtubei/v1/browse?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8';
-		let response = await invoke('request_post', {
-			url: apiUrl,
-			headers: {},
-			body: {
-				context: {
-					client: {
-						hl: 'zh-CN',
-						clientName: 'MWEB',
-						clientVersion: '2.20230101.00.00',
-						timeZone: 'Asia/Shanghai'
-					}
-				},
-				browseId: channelId,
-				params: 'EgdzdHJlYW1z8gYECgJ6AA%3D%3D'
+		let resp = await fetch(url, {
+			method: 'GET',
+			headers: {
+				'User-Agent':
+					'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
 			}
 		});
-		// match $..videoWithContextRenderer
-		console.log('youtube api response', response);
-		let apiJson = JSON.parse(response as string);
-		console.log('youtube api response', apiJson);
-		let videoWithContextRederer = JSONPath({ path: '$..videoWithContextRenderer', json: apiJson });
-		console.log('videoWithContextRederer', videoWithContextRederer);
-		// 遍历 videoWithContextRederer，找到直播视频
-		for (let video of videoWithContextRederer) {
+		let html = await resp.text();
+		console.log('youtube html', html);
+
+		// _re_ytInitialPlayerResponse = re.compile(r"""var\s+ytInitialPlayerResponse\s*=\s*({.*?});\s*var\s+\w+\s*=""", re.DOTALL)
+		let data = html.match(/var\s+ytInitialPlayerResponse\s*=\s*({.*?});\s*var\s+\w+\s*=/);
+		console.log('youtube data', data);
+		if (!data || data.length < 2) {
+			return info;
+		}
+		const initialPlayerResponse = JSON.parse(data[1]);
+		const streamingData = initialPlayerResponse.streamingData;
+		console.log('youtube streaming data', streamingData);
+		if (!streamingData) {
+			return info;
+		}
+		info.status = LiveStatus.Live;
+		info.streams.push({
+			url: streamingData.hlsManifestUrl,
+			protocol: StreamingProtocol.Hls,
+			resolution: 'default'
+		});
+		// 遍历 streamingData.adaptiveFormats，全都放入 info.streams
+		for (let format of streamingData.adaptiveFormats) {
+			console.log('youtube format', format.signatureCipher);
+			info.streams.push({
+				url: format.signatureCipher.split('url=')[1],
+				protocol: StreamingProtocol.Hls,
+				resolution: format.quality
+			});
 		}
 
-		let channelUrl = `https://www.youtube.com/channel/${channelId}/videos`;
-		console.log('channel url', channelUrl);
-		let channelResp = await invoke('request', { url: channelUrl, headers: {} });
-		console.log('channel', channelResp);
-		//                 r'"gridVideoRenderer"((.(?!"gridVideoRenderer"))(?!"style":"UPCOMING"))+"label":"(LIVE|LIVE NOW|PREMIERING NOW)"([\s\S](?!"style":"UPCOMING"))+?("gridVideoRenderer"|</script>)',
-		let liveVideoArray = (channelResp as string).match(
-			/r'"gridVideoRenderer"((.(?!"gridVideoRenderer"))(?!"style":"UPCOMING"))+"label":"(LIVE|LIVE NOW|PREMIERING NOW)"([\s\S](?!"style":"UPCOMING"))+?("gridVideoRenderer"|<\/script>)/
-		);
-		console.log('liveVideoArray', liveVideoArray);
-		let liveVideo = liveVideoArray ? liveVideoArray[1] : '';
+		// const embedUrl = `https://www.youtube.com/embed/${videoId}`;
+		// let resp = await invoke('request', { url: embedUrl, headers: {} });
+		// console.log('embed', resp);
+
+		// let channelIdArray = (resp as string).match(/\\"channelId\\":\\"(.{24})\\"/);
+		// let channelId = channelIdArray ? channelIdArray[1] : '';
+
+		// const apiUrl =
+		// 	'https://www.youtube.com/youtubei/v1/browse?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8';
+		// let response = await invoke('request_post', {
+		// 	url: apiUrl,
+		// 	headers: {},
+		// 	body: {
+		// 		context: {
+		// 			client: {
+		// 				hl: 'zh-CN',
+		// 				clientName: 'MWEB',
+		// 				clientVersion: '2.20230101.00.00',
+		// 				timeZone: 'Asia/Shanghai'
+		// 			}
+		// 		},
+		// 		browseId: channelId,
+		// 		params: 'EgdzdHJlYW1z8gYECgJ6AA%3D%3D'
+		// 	}
+		// });
+		// // match $..videoWithContextRenderer
+		// console.log('youtube api response', response);
+		// let apiJson = JSON.parse(response as string);
+		// console.log('youtube api response', apiJson);
+		// let videoWithContextRederer = JSONPath({ path: '$..videoWithContextRenderer', json: apiJson });
+		// console.log('videoWithContextRederer', videoWithContextRederer);
+		// // 遍历 videoWithContextRederer，找到直播视频
+		// for (let video of videoWithContextRederer) {
+		// }
+
+		// let channelUrl = `https://www.youtube.com/channel/${channelId}/videos`;
+		// console.log('channel url', channelUrl);
+		// let channelResp = await invoke('request', { url: channelUrl, headers: {} });
+		// console.log('channel', channelResp);
+		// //                 r'"gridVideoRenderer"((.(?!"gridVideoRenderer"))(?!"style":"UPCOMING"))+"label":"(LIVE|LIVE NOW|PREMIERING NOW)"([\s\S](?!"style":"UPCOMING"))+?("gridVideoRenderer"|</script>)',
+		// let liveVideoArray = (channelResp as string).match(
+		// 	/r'"gridVideoRenderer"((.(?!"gridVideoRenderer"))(?!"style":"UPCOMING"))+"label":"(LIVE|LIVE NOW|PREMIERING NOW)"([\s\S](?!"style":"UPCOMING"))+?("gridVideoRenderer"|<\/script>)/
+		// );
+		// console.log('liveVideoArray', liveVideoArray);
+		// let liveVideo = liveVideoArray ? liveVideoArray[1] : '';
 	} catch (e) {
 		console.error('get live info for tiktok failed: ', e);
 		// 抛出一个错误

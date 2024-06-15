@@ -8,6 +8,7 @@
 	import { t } from '@/translations';
 	import { scale } from 'svelte/transition';
 	import { backOut } from 'svelte/easing';
+	import Button from '@/components/button.svelte';
 
 	const deletePlanDialogId = 'deletePlan';
 	let list: RecordingPlan[] = $state([]);
@@ -147,7 +148,7 @@
 							</a>
 						</td>
 						<td>{row.streamProtocol}</td>
-						<td>{row.streamResolution !== '' ? row.streamResolution : $t('auto')}</td>
+						<td>{row.streamResolution !== '' ? $t(row.streamResolution) : $t('auto')}</td>
 						<td
 							><button
 								class="tooltip"
@@ -173,15 +174,12 @@
 
 <!-- 原生对话框 -->
 <Dialog text={$t('confirmDeletePlan')} id={deletePlanDialogId}>
-	<button
-		class="btn w-24 rounded-xl"
-		onclick={() => {
+	<Button
+		white
+		onClick={() => {
 			closeDialog(deletePlanDialogId);
 			dialogUrl = '';
-		}}>{$t('cancel')}</button
+		}}>{$t('cancel')}</Button
 	>
-	<!-- svelte-ignore a11y_autofocus -->
-	<button autofocus class="btn w-24 rounded-xl" onclick={() => deletePlan(dialogUrl)}
-		>{$t('confirm')}</button
-	>
+	<Button red autoFocus onClick={() => deletePlan(dialogUrl)}>{$t('confirm')}</Button>
 </Dialog>

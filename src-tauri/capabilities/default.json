@@ -13,6 +13,7 @@
 		"menu:default",
 		"tray:default",
 		"shell:allow-open",
+		"shell:allow-execute",
 		"dialog:default",
 		"dialog:allow-open",
 		{

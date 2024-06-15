@@ -6,6 +6,7 @@
 	import { invoke } from '@tauri-apps/api/core';
 	import { t } from '@/translations';
 	import { backOut } from 'svelte/easing';
+	import Button from '@/components/button.svelte';
 
 	let config: AppConfig | undefined = $state();
 	let rawConfig: AppConfig | undefined = $state();
@@ -139,13 +140,12 @@
 
 		<div class="flex items-center justify-center gap-8 p-8">
 			{#if changed}
-				<button
-					class="btn btn-wide"
-					onclick={() => (config = JSON.parse(JSON.stringify(rawConfig)))}>{$t('cancel')}</button
+				<Button
+					white
+					className="w-36"
+					onClick={() => (config = JSON.parse(JSON.stringify(rawConfig)))}>{$t('cancel')}</Button
 				>
-				<button class="btn btn-primary btn-wide" onclick={async () => await setConfig()}
-					>{$t('save')}</button
-				>
+				<Button white className="w-36" onClick={async () => await setConfig()}>{$t('save')}</Button>
 			{/if}
 		</div>
 	</div>

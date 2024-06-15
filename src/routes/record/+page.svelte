@@ -5,7 +5,6 @@
 		closeDialog,
 		openDialog,
 		debounce,
-		getResolutionName,
 		getLiveInfoForPlatform,
 		getPlatformIcon
 	} from '$lib/utils';
@@ -296,7 +295,9 @@
 				? 'mt-16'
 				: 'mt-32'}"
 		>
-			<label class="flex h-14 rounded-full bg-gray1 px-2 text-gray2 forced-color-adjust-none">
+			<label
+				class="flex h-14 rounded-full border border-gray1 bg-gray1 px-2 text-gray2 forced-color-adjust-none"
+			>
 				<input
 					bind:this={inputRef}
 					oninput={handleinput}
@@ -305,7 +306,7 @@
 				/>
 				{#if url}
 					<button
-						class="tooltip mr-2 flex items-center"
+						class="tooltip ml-4 mr-2 flex items-center"
 						data-tip={$t('clear')}
 						onclick={() => {
 							inputRef!.value = '';
@@ -314,9 +315,14 @@
 							errorMessage = '';
 						}}
 					>
-						<span class="icon-[fluent--dismiss-circle-28-regular] h-6 w-6 text-gray-500"></span>
+						<span
+							class="icon-[fluent--dismiss-circle-28-regular] h-6 w-6 text-gray-500 hover:text-white"
+						></span>
 					</button>
 				{/if}
+				<span
+					class="absolute inset-x-1 bottom-0 left-[360px] h-px w-[120px] bg-gradient-to-r from-fuchsia-400/0 via-slate-400/60 to-fuchsia-400/0"
+				></span>
 			</label>
 		</div>
 		{#if errorMessage || liveInfo || requesting || url}
@@ -350,7 +356,9 @@
 
 				<button class="px-3" onclick={() => getLiveInfo()}>
 					<span
-						class="icon-[fluent--arrow-clockwise-28-regular] h-8 w-8 {requesting ? 'rotate' : ''}"
+						class="icon-[fluent--arrow-clockwise-28-regular] h-8 w-8 hover:text-white {requesting
+							? 'rotate'
+							: ''}"
 					></span>
 				</button>
 			</div>
@@ -360,8 +368,7 @@
 					<div class="flex h-full w-full items-center justify-center">
 						<span class="loading loading-dots loading-md"></span>
 					</div>
-				{/if}
-				{#if liveInfo}
+				{:else if liveInfo}
 					<div>
 						<div class="w-full text-white1">
 							{#if liveInfo.status === LiveStatus.Live}
@@ -394,7 +401,7 @@
 											>
 												{#each liveInfo.streams as item}
 													<option value={item.url}
-														>{item.protocol + ' ' + getResolutionName(item.resolution)}</option
+														>{item.protocol + ' ' + $t(item.resolution)}</option
 													>
 												{/each}
 											</select>
@@ -446,24 +453,37 @@
 											<span class="loading loading-dots loading-md"></span>
 										{:else if recordStatus === RecordingStatus.Recording}
 											<a
-												class="rounded-full bg-white1 px-6 py-3 text-lg text-black1 shadow-lg transition duration-200 hover:bg-white hover:shadow-xl focus:scale-95"
-												href="/record/history">去录制历史中查看</a
+												class="w-2/3 rounded-full bg-white1 px-6 py-3 text-lg text-black1 shadow-lg transition duration-200 hover:bg-white hover:shadow-xl focus:scale-95"
+												href="/record/history"
 											>
+												<p
+													class="transform text-center transition-transform duration-300 hover:-translate-y-1"
+												>
+													{$t('gotoRecordHistory')}
+												</p>
+											</a>
 										{:else}
 											<Button
 												white
 												className="w-2/3 transform-gpu transition-all duration-500 ease-out"
-												onClick={() => startRecord()}>{$t('startRecord')}</Button
+												onClick={() => startRecord()}
 											>
+												<p class="transform transition-transform duration-300 hover:-translate-y-1">
+													{$t('startRecord')}
+												</p>
+											</Button>
 										{/if}
 									</div>
 								</div>
 							{:else}
 								<div class="flex w-full justify-center pt-12">
-									<Button white className="w-2/3 " onClick={() => handleAddPlan(true)}
-										>{$t('addPlan')}</Button
-									>
+									<Button white className="w-2/3 " onClick={() => handleAddPlan(true)}>
+										<p class="transform transition-transform duration-300 hover:-translate-y-1">
+											{$t('addPlan')}
+										</p>
+									</Button>
 								</div>
+								<p class="pt-12 text-xs text-gray-600">{$t('addPlanTips')}</p>
 							{/if}
 						</div>
 					</div>
@@ -473,7 +493,7 @@
 			<div class="w-1/2 min-w-[600px] gap-8 pt-16">
 				<div class="overflow-y-auto overflow-x-clip">
 					{#if queryHistory.length <= 5}
-						<h3 class="pb-4 font-bold">不知道如何开始？试试这些</h3>
+						<h3 class="pb-4 font-bold">{$t('tryThese')}</h3>
 						<div>
 							{#each tryLinks as link}
 								<div
@@ -495,7 +515,7 @@
 							{/each}
 						</div>
 					{:else}
-						<h3 class="pb-4 font-bold">最近查询</h3>
+						<h3 class="pb-4 font-bold">{$t('recentSearch')}</h3>
 						{#each queryHistory as history}
 							<div
 								class="group flex w-full transform items-center justify-between transition-transform duration-300 hover:-translate-y-1"
