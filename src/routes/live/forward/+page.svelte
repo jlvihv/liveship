@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
-	import { debounce, getResolutionName, getLiveInfoForPlatform } from '$lib/utils';
+	import { debounce, getLiveInfoForPlatform } from '$lib/utils';
 	import { onMount } from 'svelte';
 	import { invoke } from '@tauri-apps/api/core';
 	import { LiveStatus, type LiveInfo } from '$lib/model';
@@ -187,7 +187,7 @@
 										>
 											{#each liveInfo.streams as item}
 												<option value={item.url}
-													>{item.protocol + ' ' + getResolutionName(item.resolution)}</option
+													>{item.protocol + ' ' + $t(item.resolution.toLowerCase())}</option
 												>
 											{/each}
 										</select>
