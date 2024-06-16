@@ -12,13 +12,13 @@ liveship essentially acts as a wrapper for ffmpeg. It simulates requests to obta
 
 ## Supported Websites
 
-[x] youtube
-[x] tiktok
-[x] twitch
-[x] Douyin
-[x] Huya
-[x] Xiaohongshu
-[] More platforms are in development.
+- [x] youtube
+- [x] tiktok
+- [x] twitch
+- [x] Douyin
+- [x] Huya
+- [x] Xiaohongshu
+- [] More platforms are in development.
 
 ## Tech Stack
 
