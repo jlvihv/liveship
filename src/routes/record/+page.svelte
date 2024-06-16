@@ -75,11 +75,6 @@
 		}
 	});
 
-	$effect(() => {
-		// 当 inPlan 变化时，打印
-		console.log('inPlan', inPlan);
-	});
-
 	// 防抖调用 api, 500ms 内只调用一次
 	const handleinput = debounce(async (event) => {
 		url = event?.target.value.trim();
@@ -114,10 +109,10 @@
 				anchorName: liveInfo.anchorName,
 				platformKind: liveInfo.platformKind
 			});
-			queryHistory = queryHistory.slice(0, 8);
+			// queryHistory = queryHistory.slice(0, 8);
 			localStorage.setItem('queryHistory', JSON.stringify(queryHistory));
 		} catch (err) {
-			errorMessage = err as string;
+			errorMessage = $t('parseError');
 		}
 		requesting = false;
 	}
@@ -139,12 +134,10 @@
 			toast.error($t('pleaseInputLiveAddress'));
 			return;
 		}
-		console.log('handle add plan, enabled: ', enabled);
 		loading = true;
 		try {
 			// 先找到当前选中的流
 			let stream = liveInfo?.streams.find((s) => s.url === streamUrl);
-			console.log('stream', stream);
 			let plan: RecordingPlan = {
 				url,
 				enabled,
@@ -199,7 +192,6 @@
 			loading = false;
 			return;
 		}
-		console.log('stream', stream, liveInfo);
 		try {
 			recordStatus = await invoke('start_record', {
 				autoRecord,
@@ -254,9 +246,7 @@
 </script>
 
 {#snippet icon(platformKind:string)}
-	<div class="flex justify-center">
-		<img class="h-6 w-6" src={getPlatformIcon(platformKind)} alt={platformKind} />
-	</div>
+	<img class="h-6 w-auto object-cover" src={getPlatformIcon(platformKind)} alt={platformKind} />
 {/snippet}
 
 <!-- 原生对话框 -->
@@ -329,12 +319,11 @@
 			<!-- 左边显示标题，或错误消息，右边显示刷新按钮 -->
 			<div class="flex w-1/2 min-w-[600px] items-start justify-between pt-12">
 				{#if liveInfo?.status === LiveStatus.Live}
-					<h1 class="flex items-center gap-8 text-2xl font-bold text-white1">
+					<h1 class="flex w-full items-center gap-8 text-2xl font-bold text-white1">
 						{@render icon(liveInfo?.platformKind)}
-						{liveInfo?.title}
-						{#if recordStatus === RecordingStatus.Recording}
-							<span class="text-sm font-normal text-green-500">{$t('recording')}</span>
-						{/if}
+						<p>
+							{liveInfo?.title}
+						</p>
 					</h1>
 				{:else if liveInfo?.status === LiveStatus.NotLive}
 					<div>
@@ -386,6 +375,9 @@
 										<b>{liveInfo.anchorName}</b>
 										<div class="flex gap-8">
 											<p class="text-green-500">{$t('living')}</p>
+											{#if recordStatus === RecordingStatus.Recording}
+												<span class="text-green-500">{$t('recording')}</span>
+											{/if}
 											<p>
 												{liveInfo.viewerCount ? liveInfo.viewerCount + $t('watching') : ''}
 											</p>
@@ -401,7 +393,7 @@
 											>
 												{#each liveInfo.streams as item}
 													<option value={item.url}
-														>{item.protocol + ' ' + $t(item.resolution)}</option
+														>{item.protocol + ' ' + $t(item.resolution.toLowerCase())}</option
 													>
 												{/each}
 											</select>
@@ -490,60 +482,58 @@
 				{/if}
 			</div>
 		{:else}
-			<div class="w-1/2 min-w-[600px] gap-8 pt-16">
-				<div class="overflow-y-auto overflow-x-clip">
-					{#if queryHistory.length <= 5}
-						<h3 class="pb-4 font-bold">{$t('tryThese')}</h3>
-						<div>
-							{#each tryLinks as link}
-								<div
-									class="transform justify-between transition-transform duration-300 hover:-translate-y-1"
-								>
-									<button
-										class="max-w-full py-2 hover:text-white"
-										onclick={() => {
+			<div class="container mb-8 mt-16 w-1/2 min-w-[600px] gap-8 overflow-y-auto overflow-x-clip">
+				{#if queryHistory.length <= 5}
+					<h3 class="pb-4 font-bold">{$t('tryThese')}</h3>
+					<div>
+						{#each tryLinks as link}
+							<div
+								class="transform justify-between transition-transform duration-300 hover:-translate-y-1"
+							>
+								<button
+									class="max-w-full py-2 hover:text-white"
+									onclick={() => {
 							inputRef!.value = link;
 							url = link;
 							getLiveInfo();
 						}}
-									>
-										<p class="w-full truncate text-left">
-											{link}
-										</p>
-									</button>
-								</div>
-							{/each}
-						</div>
-					{:else}
-						<h3 class="pb-4 font-bold">{$t('recentSearch')}</h3>
-						{#each queryHistory as history}
-							<div
-								class="group flex w-full transform items-center justify-between transition-transform duration-300 hover:-translate-y-1"
-							>
-								<button
-									class="max-w-2/3 flex-1 py-2 hover:text-white"
-									onclick={() => {
+								>
+									<p class="w-full truncate text-left">
+										{link}
+									</p>
+								</button>
+							</div>
+						{/each}
+					</div>
+				{:else}
+					<h3 class="pb-4 font-bold">{$t('recentSearch')}</h3>
+					{#each queryHistory as history}
+						<div
+							class="group flex w-full transform items-center justify-between transition-transform duration-300 hover:-translate-y-1"
+						>
+							<button
+								class="max-w-2/3 flex-1 py-2 hover:text-white"
+								onclick={() => {
 								inputRef!.value = history.url;
 								url = history.url;
 								getLiveInfo();
 							}}
-								>
-									<p class="w-full truncate text-left">
-										{`${history.platformKind && history.anchorName ? $t(history.platformKind) + ' - ' : ''}${history.anchorName}` ||
-											history.url}
-									</p>
-								</button>
-								<button
-									class="icon-[fluent--dismiss-circle-28-regular] h-4 w-4 px-2 text-gray-600 opacity-0 hover:text-white group-hover:opacity-100"
-									onclick={() => {
-										queryHistory = queryHistory.filter((item) => item.url !== history.url);
-										localStorage.setItem('queryHistory', JSON.stringify(queryHistory));
-									}}
-								></button>
-							</div>
-						{/each}
-					{/if}
-				</div>
+							>
+								<p class="w-full truncate text-left">
+									{`${history.platformKind && history.anchorName ? $t(history.platformKind) + ' - ' : ''}${history.anchorName}` ||
+										history.url}
+								</p>
+							</button>
+							<button
+								class="icon-[fluent--dismiss-circle-28-regular] mr-8 h-4 w-4 px-2 text-gray-600 opacity-0 hover:text-white group-hover:opacity-100"
+								onclick={() => {
+									queryHistory = queryHistory.filter((item) => item.url !== history.url);
+									localStorage.setItem('queryHistory', JSON.stringify(queryHistory));
+								}}
+							></button>
+						</div>
+					{/each}
+				{/if}
 			</div>
 		{/if}
 	</div>

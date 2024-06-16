@@ -482,3 +482,19 @@ pub mod request_api {
         Ok(resp)
     }
 }
+
+pub mod my_utils {
+    use rusty_ytdl::{Video, VideoInfo};
+
+    use super::*;
+
+    #[tauri::command]
+    pub async fn get_youtube_info(url: String) -> Result<VideoInfo, String> {
+        let video = Video::new(&url).map_err(|e| format!("Could not get video info: {}", e))?;
+        let video_info = video
+            .get_info()
+            .await
+            .map_err(|e| format!("Could not get video info: {}", e))?;
+        Ok(video_info)
+    }
+}

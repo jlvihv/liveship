@@ -110,7 +110,6 @@
 	"origin": "Original",
 	"source": "Original",
 	"full_hd1": "Full HD",
-	"FULL_HD1": "Full HD",
 	"hd1": "HD",
 	"uhd": "Ultra HD",
 	"hd": "HD",
@@ -121,7 +120,6 @@
 	"sd": "SD",
 	"sd1": "SD",
 	"sd2": "SD",
-	"SD2": "SD",
 	"ld": "Smooth",
 	"ld1": "Smooth",
 	"ld2": "Smooth",
@@ -139,5 +137,6 @@
 	"uhd_60": "Ultra HD 60fps",
 	"recentSearch": "Recent search",
 	"tryThese": "Don't know how to start? Try these",
-	"gotoRecordHistory": "Go to record history to view"
+	"gotoRecordHistory": "Go to record history to view",
+	"parseError": "Failed to parse live stream address, please refresh and try again"
 }

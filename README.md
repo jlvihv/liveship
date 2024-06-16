@@ -1,33 +1,35 @@
-## 简介
+[中文](README.zh.md)
 
-liveship 是一个小巧易用的直播录制工具，目前已支持抖音、虎牙、小红书、tiktok、twitch，未来计划添加更多平台支持。
+## Introduction
 
-## 工作原理
+liveship is a compact and easy-to-use live streaming recording tool. It currently supports YouTube, TikTok, Twitch, Douyin, Huya, and Xiaohongshu, with plans to add support for more platforms in the future.
 
-liveship 本质上只是 ffmpeg 套壳，通过模拟请求获取直播流地址，然后使用 ffmpeg 进行录制。因此要求您的电脑上必须安装有 ffmpeg，并在“程序设置”页面指定 ffmpeg 路径。
+## How It Works
 
-## 技术栈
+liveship essentially acts as a wrapper for ffmpeg. It simulates requests to obtain live stream URLs and then uses ffmpeg to record them. Therefore, you must have ffmpeg installed on your computer and specify the path to ffmpeg on the "Program Settings" page.
 
-自豪的使用 rust、tauri 和 svelte 5 构建。
+## Tech Stack
 
-## 使用方法
+Proudly built with Rust, Tauri, and Svelte 5.
 
-liveship 是一个基于 tauri 的桌面应用程序，您可以从 [release](https://github.com/jlvihv/liveship/releases/) 页面下载对应平台的二进制文件，然后安装运行。
+## Usage
 
-## 常见问题
+liveship is a Tauri-based desktop application. You can download the binary files for your platform from the [release](https://github.com/jlvihv/liveship/releases/) page, then install and run it.
 
-1. mac os 提示“文件已损坏，无法打开”：这是因为 mac os 限制了非 app store 的应用程序，您可以在终端中执行 `sudo xattr -d com.apple.quarantine /Applications/liveship.app` 命令解除限制。
+## FAQ
 
-## 特别鸣谢
+1. macOS prompts "The file is damaged and cannot be opened": This is because macOS restricts applications not from the App Store. You can remove the restriction by running the command `sudo xattr -d com.apple.quarantine /Applications/liveship.app` in the terminal.
 
-直播源解析的代码很大程度上参考了 [DouyinLiveRecorder](https://github.com/ihmily/DouyinLiveRecorder) 项目，在此致以诚挚的感谢。
+## Special Thanks
 
-## 特别说明
+The code for live stream parsing largely references the [DouyinLiveRecorder](https://github.com/ihmily/DouyinLiveRecorder) project. We extend our sincere thanks for their work.
 
-liveship 计划在 1.0 版本之后添加收费功能，作为我独立开发人生道路的探索。但在 1.0 之前，所有功能都是开源免费的，期待您的建议和反馈。
+## Special Note
+
+liveship plans to introduce paid features after version 1.0 as part of my journey as an independent developer. However, all features will be open-source and free before version 1.0. Your suggestions and feedback are highly appreciated.
 
 ## License
 
 CC BY-NC (Creative Commons Attribution-NonCommercial):
 
-允许复制、发行、展示和表演作品及其衍生作品，但仅限于非商业用途。
+Allows copying, distribution, display, and performance of the work and its derivative works, but only for non-commercial purposes.

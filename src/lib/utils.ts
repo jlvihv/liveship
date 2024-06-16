@@ -66,23 +66,23 @@ export function openDialog(id: string) {
 export function getPlatformIcon(platformKind: string): string {
 	switch (platformKind.toLowerCase()) {
 		case 'douyin':
-			return 'https://www.douyin.com/favicon.ico';
+			return '/douyin.ico';
 		case 'huya':
-			return 'https://www.huya.com/favicon.ico';
+			return '/huya.ico';
 		case 'bilibili':
-			return 'https://www.bilibili.com/favicon.ico';
+			return '/bilibili.ico';
 		case 'douyu':
-			return 'https://www.douyu.com/favicon.ico';
+			return '/douyu.ico';
 		case 'kuaishou':
-			return 'https://m.kuaishou.com/favicon.ico';
+			return '/kuaishou.ico';
 		case 'twitch':
-			return 'https://m.twitch.tv/favicon.ico?desktop-redirect=true';
+			return '/twitch.ico';
 		case 'youtube':
-			return 'https://m.youtube.com/static/apple-touch-icon-72x72-precomposed.png';
+			return '/youtube.png';
 		case 'xiaohongshu':
-			return 'https://www.xiaohongshu.com/favicon.ico';
+			return '/xiaohongshu.ico';
 		case 'tiktok':
-			return 'https://www.tiktok.com/favicon.ico';
+			return '/tiktok.ico';
 		default:
 			return 'https://www.google.com/favicon.ico';
 	}
@@ -104,8 +104,6 @@ export function getPlatformKind(url: string): PlatformKind {
 			return PlatformKind.Twitch;
 		case url.startsWith('https://www.youtube.com/watch?v='):
 			return PlatformKind.Youtube;
-		case url.startsWith(''):
-			return PlatformKind.Kuaishou;
 		default:
 			return PlatformKind.Unknown;
 	}
@@ -128,7 +126,7 @@ export async function getLiveInfoForPlatform(url: string): Promise<LiveInfo> {
 		case PlatformKind.Xiaohongshu:
 			return getLiveInfoForXiaohongshu(url);
 		case PlatformKind.Kuaishou:
-		  return getLiveInfoForKuaishou(url);
+			return getLiveInfoForKuaishou(url);
 		default:
 			throw new Error('unknown platform');
 	}

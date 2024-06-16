@@ -56,6 +56,7 @@ pub fn run() {
             manager::request_api::request,
             manager::request_api::try_request_get_status,
             manager::request_api::request_post,
+            manager::my_utils::get_youtube_info,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

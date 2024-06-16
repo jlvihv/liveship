@@ -21,6 +21,7 @@ export async function getLiveInfoForDouyin(url: string): Promise<LiveInfo> {
 			headers: getHeaders()
 		});
 		let html = await resp.text();
+		console.log('douyin html', html);
 		// 解析 html，填充 LiveInfo
 		parseHtmlAndFillLiveInfo(html, info);
 	} catch (e) {
