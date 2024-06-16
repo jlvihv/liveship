@@ -2,13 +2,23 @@
 
 ## Introduction
 
-liveship is a compact and easy-to-use live streaming recording tool. It currently supports YouTube, TikTok, Twitch, Douyin, Huya, and Xiaohongshu, with plans to add support for more platforms in the future.
+liveship is a compact and user-friendly live stream recording tool that captures live streams as video files. It is a cross-platform desktop application that supports Windows, macOS, and Linux systems.
 
 ![image](image.png)
 
 ## How It Works
 
-liveship essentially acts as a wrapper for ffmpeg. It simulates requests to obtain live stream URLs and then uses ffmpeg to record them. Therefore, you must have ffmpeg installed on your computer and specify the path to ffmpeg on the "Program Settings" page.
+liveship essentially acts as a wrapper for ffmpeg. It simulates requests to obtain live stream URLs and then uses ffmpeg to record them. If ffmpeg is not installed on your computer, liveship can automatically download it for you.
+
+## Supported Websites
+
+[x] youtube
+[x] tiktok
+[x] twitch
+[x] Douyin
+[x] Huya
+[x] Xiaohongshu
+[] More platforms are in development.
 
 ## Tech Stack
 
@@ -17,6 +27,30 @@ Proudly built with Rust, Tauri, and Svelte 5.
 ## Usage
 
 liveship is a Tauri-based desktop application. You can download the binary files for your platform from the [release](https://github.com/jlvihv/liveship/releases/) page, then install and run it.
+
+After running the application, enter the live stream URL in the input box and click the "Start Recording" button.
+
+## Example Live Stream URLs
+
+```shell
+# youtube
+https://www.youtube.com/watch?v=waoLuUuC7yU
+
+# tiktok
+https://www.tiktok.com/@inhawlee12/live
+
+# twitch
+https://www.twitch.tv/kriss_drummer
+
+# Douyin
+https://live.douyin.com/790601393533
+
+# Huya
+https://www.huya.com/kpl
+
+# Xiaohongshu
+https://www.xiaohongshu.com/hina/livestream/569261361743261994?timestamp=1718371092456&share_source=&share_source_id=null&source=share_out_of_app&host_id=5c878d39000000001202d5e0&xhsshare=WeixinSession&appuid=5ed89960000000000101fdef&apptime=1718371092&share_id=da64276193b44a2ba85bda5c6fba5016
+```
 
 ## FAQ
 
