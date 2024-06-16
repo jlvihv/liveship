@@ -1,7 +1,7 @@
 [package]
 name = "liveship"
-version = "0.1.18"
-description = "liveship 是一个直播录制工具，目前已支持抖音、虎牙、小红书、youtube、tiktok、twitch"
+version = "0.1.19"
+description = "liveship is a compact and user-friendly live stream recording tool that captures live streams as video files."
 authors = ["jlvihv"]
 email = "imvihv@gmail.com"
 edition = "2021"
