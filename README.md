@@ -18,7 +18,7 @@ liveship essentially acts as a wrapper for ffmpeg. It simulates requests to obta
 - [x] Douyin
 - [x] Huya
 - [x] Xiaohongshu
-- [] More platforms are in development.
+- [ ] More platforms are in development.
 
 ## Tech Stack
 

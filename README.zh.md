@@ -18,7 +18,7 @@ liveship 本质上只是 ffmpeg 套壳，通过模拟请求获取直播流地址
 - [x] youtube
 - [x] tiktok
 - [x] twitch
-- [] 更多平台正在开发中
+- [ ] 更多平台正在开发中
 
 ## 技术栈
 
