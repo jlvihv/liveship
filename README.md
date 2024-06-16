@@ -4,6 +4,8 @@
 
 liveship is a compact and easy-to-use live streaming recording tool. It currently supports YouTube, TikTok, Twitch, Douyin, Huya, and Xiaohongshu, with plans to add support for more platforms in the future.
 
+![image](image.png)
+
 ## How It Works
 
 liveship essentially acts as a wrapper for ffmpeg. It simulates requests to obtain live stream URLs and then uses ffmpeg to record them. Therefore, you must have ffmpeg installed on your computer and specify the path to ffmpeg on the "Program Settings" page.

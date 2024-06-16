@@ -4,6 +4,8 @@
 
 liveship 是一个小巧易用的直播录制工具，目前已支持抖音、虎牙、小红书、youtube、tiktok、twitch，未来计划添加更多平台支持。
 
+![image](image.png)
+
 ## 工作原理
 
 liveship 本质上只是 ffmpeg 套壳，通过模拟请求获取直播流地址，然后使用 ffmpeg 进行录制。因此要求您的电脑上必须安装有 ffmpeg，并在“程序设置”页面指定 ffmpeg 路径。
