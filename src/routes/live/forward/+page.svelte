@@ -66,7 +66,7 @@
 		}
 		let ffmpegCommand = buildFFmpegForwardCommand(streamUrl, outputUrl);
 		try {
-			invoke('execute_ffmpeg_command', { ffmpegCommand });
+			await invoke('execute_ffmpeg_command', { ffmpegCommand });
 			// 只要不异常，就认为成功了
 			forwarding = true;
 		} catch (e) {
@@ -77,7 +77,7 @@
 
 	async function stopForward() {
 		try {
-			invoke('stop_ffmpeg_command');
+			await invoke('stop_ffmpeg_command');
 			forwarding = false;
 		} catch (e) {
 			toast.error(e as string);

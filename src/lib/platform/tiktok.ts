@@ -18,7 +18,8 @@ export async function getLiveInfoForTiktok(url: string): Promise<LiveInfo> {
 		// let data = await invoke('request', { url, headers: getHeaders() });
 		let resp = await fetch(url, {
 			method: 'GET',
-			headers: getHeaders()
+			headers: getHeaders(),
+			connectTimeout: 10000
 		});
 		let html = await resp.text();
 		// 解析 html，填充 LiveInfo

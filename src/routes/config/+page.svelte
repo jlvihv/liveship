@@ -7,6 +7,7 @@
 	import { t } from '@/translations';
 	import { backOut } from 'svelte/easing';
 	import Button from '@/components/button.svelte';
+	import { platform } from '@tauri-apps/plugin-os';
 
 	let config: AppConfig | undefined = $state();
 	let rawConfig: AppConfig | undefined = $state();
@@ -21,6 +22,9 @@
 		// 获取保存在 localStorage 中的语言设置
 		language = localStorage.getItem('lang') || 'en';
 		await getConfig();
+
+		const os = await platform();
+		localStorage.setItem('os', os);
 	});
 
 	// 改变语言，并保存到 localStorage
@@ -34,30 +38,36 @@
 		ffmpegVersion = '';
 	}
 
+	function getFFmpegPathPlaceholder() {
+		const os = localStorage.getItem('os');
+		if (os == 'windows') {
+			return ' e.g.: C:\\ffmpeg\\bin\\ffmpeg.exe';
+		} else {
+			return ' e.g.: /usr/local/bin/ffmpeg';
+		}
+	}
+
 	async function getConfig() {
-		invoke('get_config')
-			.then((data) => {
-				rawConfig = data as AppConfig;
-				config = JSON.parse(JSON.stringify(rawConfig));
-			})
-			.catch((e) =>
-				toast.error($t('getSettingsFailed'), {
-					description: e
-				})
-			);
+		try {
+			rawConfig = await invoke('get_config');
+			config = JSON.parse(JSON.stringify(rawConfig));
+		} catch (e) {
+			toast.error($t('getSettingsFailed'), {
+				description: e as string
+			});
+		}
 	}
 
 	async function setConfig() {
-		invoke('set_config', { config })
-			.then(() => {
-				toast.success($t('saveSuccess'));
-				rawConfig = JSON.parse(JSON.stringify(config));
-			})
-			.catch((e) =>
-				toast.error($t('saveFailed'), {
-					description: e
-				})
-			);
+		try {
+			await invoke('set_config', { config });
+			toast.success($t('saveSuccess'));
+			rawConfig = JSON.parse(JSON.stringify(config));
+		} catch (e) {
+			toast.error($t('saveFailed'), {
+				description: e as string
+			});
+		}
 	}
 
 	async function checkFFmpeg(path: string) {
@@ -65,19 +75,17 @@
 		if (timeoutId) {
 			clearTimeout(timeoutId);
 		}
-		invoke('check_ffmpeg_version', { path })
-			.then((data) => {
-				ffmpegVersion = data as string;
-				toast.success($t('ffmpegPathAvailable'));
-				timeoutId = setTimeout(() => {
-					ffmpegVersion = '';
-				}, 10000);
-			})
-			.catch((err) => {
-				toast.error($t('ffmpegPathUnavailable'), {
-					description: err
-				});
+		try {
+			ffmpegVersion = await invoke('check_ffmpeg_version', { path });
+			toast.success($t('ffmpegPathAvailable'));
+			timeoutId = setTimeout(() => {
+				ffmpegVersion = '';
+			}, 10000);
+		} catch (e) {
+			toast.error($t('ffmpegPathUnavailable'), {
+				description: e as string
 			});
+		}
 	}
 </script>
 
@@ -104,7 +112,7 @@
 			<input
 				type="text"
 				class="m-0 grow resize-none appearance-none overflow-hidden bg-transparent px-0 py-4 pl-4 placeholder-gray2 outline-none focus:text-white1"
-				placeholder={$t('ffmpegPathPlaceholder')}
+				placeholder={$t('ffmpegPathPlaceholder') + getFFmpegPathPlaceholder()}
 				bind:value={config.ffmpegPath}
 				oninput={handleFfmpegPathChange}
 			/>
@@ -123,7 +131,7 @@
 			<input
 				type="text"
 				class="m-0 grow resize-none appearance-none overflow-hidden bg-transparent px-0 py-4 pl-4 placeholder-gray2 outline-none focus:text-white1"
-				placeholder=""
+				placeholder={$t('savePathPlaceholder')}
 				bind:value={config.savePath}
 			/>
 		</label>

@@ -79,7 +79,8 @@
 	"ffmpegPathAvailable": "FFmpeg 路径可用",
 	"ffmpegPathUnavailable": "FFmpeg 路径不可用",
 	"check": "检查",
-	"savePath": "文件保存路径",
+	"savePath": "视频保存到",
+	"savePathPlaceholder": "请输入文件夹位置",
 	"pollInterval": "开播信息轮询间隔（单位秒）",
 	"save": "保存",
 	"language": "语言",
@@ -137,5 +138,8 @@
 	"recentSearch": "最近查询",
 	"tryThese": "不知道如何开始？试试这些",
 	"gotoRecordHistory": "去录制历史中查看",
-	"parseError": "解析直播流地址错误，请刷新试试"
+	"parseError": "解析直播流地址错误，请刷新试试",
+	"useProxy": "使用代理录制",
+	"useProxyPlaceholder": "请输入代理地址",
+	"advancedOptions": "高级选项"
 }

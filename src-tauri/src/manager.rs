@@ -1,5 +1,6 @@
 use crate::model::AppConfig;
 use crate::model::LiveInfo;
+use crate::model::RecordingOption;
 use crate::model::{PlatformKind, Stream};
 use crate::{
     ffmpeg, kv,
@@ -23,6 +24,7 @@ pub mod inner {
     pub async fn start_record_with_stream(
         stream: Stream,
         live_info: LiveInfo,
+        option: Option<RecordingOption>,
     ) -> anyhow::Result<()> {
         // 如果已经在录制了，就不再录制，返回错误
         if inner::get_record_status(&live_info.url).await? == RecordStatus::Recording {
@@ -43,7 +45,7 @@ pub mod inner {
             .to_str()
             .ok_or_else(|| anyhow::anyhow!("Could not convert path to string: {:?}", path))?;
 
-        inner::record_with_ffmpeg(&live_info.url, &stream.url, full_filename).await?;
+        inner::record_with_ffmpeg(&live_info.url, &stream.url, full_filename, option).await?;
 
         // 记录录制历史
         let mut history = RecordingHistory::new(&live_info.url, full_filename);
@@ -59,9 +61,10 @@ pub mod inner {
         url: &str,
         stream_url: &str,
         full_filename: &str,
+        option: Option<RecordingOption>,
     ) -> anyhow::Result<()> {
         let ffmpeg_path = kv::config::get()?.ffmpeg_path;
-        let mut child = match ffmpeg::record(&ffmpeg_path, stream_url, full_filename) {
+        let mut child = match ffmpeg::record(&ffmpeg_path, stream_url, full_filename, option) {
             Ok(child) => child,
             Err(e) => {
                 eprintln!("Could not start recording: {}", e);
@@ -107,6 +110,7 @@ pub mod record {
         auto_record: bool,
         stream: Stream,
         live_info: LiveInfo,
+        option: Option<RecordingOption>,
     ) -> Result<RecordStatus, String> {
         // 如果要自动录制，加入录制计划表
         if auto_record {
@@ -114,6 +118,7 @@ pub mod record {
                 &live_info.url,
                 stream.protocol.clone(),
                 stream.resolution.clone(),
+                option.clone(),
             );
             plan.live_info = Some(live_info.clone());
             kv::plan::add(&plan).map_err(|e| format!("Could not add recording plan: {}", e))?;
@@ -123,7 +128,7 @@ pub mod record {
             eprintln!("Could not add live info: {}", e);
             e.to_string()
         })?;
-        inner::start_record_with_stream(stream, live_info)
+        inner::start_record_with_stream(stream, live_info, option)
             .await
             .map_err(|e| {
                 eprintln!("Could not start recording: {}", e);
@@ -496,5 +501,13 @@ pub mod my_utils {
             .await
             .map_err(|e| format!("Could not get video info: {}", e))?;
         Ok(video_info)
+    }
+
+    #[tauri::command]
+    pub async fn get_system_proxy_info() -> Result<String, String> {
+        // 读取环境变量中的 http_proxy 或 HTTP_PROXY 或 all_proxy 或 ALL_PROXY
+        let proxy = sysproxy::Sysproxy::get_http()
+            .map_err(|e| format!("can not get system http proxy: {}", e.to_string()))?;
+        Ok(format!("http://{}:{}", proxy.host, proxy.port))
     }
 }

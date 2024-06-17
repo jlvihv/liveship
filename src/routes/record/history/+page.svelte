@@ -47,31 +47,28 @@
 	});
 
 	async function getAllHistory() {
-		invoke('get_all_history')
-			.then((data) => {
-				list = data as RecordingHistory[];
-			})
-			.catch((e) => {
-				toast.error($t('getRecordHistoryFailed'), {
-					description: e
-				});
+		try {
+			list = await invoke('get_all_history');
+		} catch (e) {
+			toast.error($t('getRecordHistoryFailed'), {
+				description: e as string
 			});
+		}
 	}
 
 	// 删除一条历史记录
 	async function deleteHistory(url: string, startTime: number, deleteFile: boolean) {
 		closeDialog(deleteHistoryDialogId);
 		deleteHistoryParams = undefined;
-		invoke('delete_history', { url, startTime, deleteFile })
-			.then(() => {
-				toast.success($t('deleteSuccess'));
-				getAllHistory();
-			})
-			.catch((e) => {
-				toast.error($t('deleteSuccess'), {
-					description: e
-				});
+		try {
+			await invoke('delete_history', { url, startTime, deleteFile });
+			toast.success($t('deleteSuccess'));
+			await getAllHistory();
+		} catch (e) {
+			toast.error($t('deleteFailed'), {
+				description: e as string
 			});
+		}
 	}
 
 	async function stopRecord(url: string, disablePlan: boolean) {
@@ -81,39 +78,36 @@
 			toast.error($t('urlCannotBeEmpty'));
 			return;
 		}
-		if (disablePlan) {
+		try {
 			// 禁用此计划
-			invoke('update_plan_status', { url, enabled: false })
-				.then(() => {})
-				.catch((e) => {
-					toast.error($t('disablePlanFailed'), {
-						description: e
-					});
-				});
-		}
-		invoke('stop_record', { url })
-			.then(() => {
-				toast.success($t('recordAlreadyStopped'));
-				getAllHistory();
-			})
-			.catch((e) => {
-				toast.error($t('recordStopFailed'), {
-					description: e
-				});
+			await invoke('update_plan_status', { url, enabled: false });
+		} catch (e) {
+			toast.error($t('disablePlanFailed'), {
+				description: e as string
 			});
+		}
+
+		try {
+			await invoke('stop_record', { url });
+			toast.success($t('recordAlreadyStopped'));
+			await getAllHistory();
+		} catch (e) {
+			toast.error($t('recordStopFailed'), {
+				description: e as string
+			});
+		}
 	}
 
 	// 在文件管理器中打开文件夹
 	async function openInFolder(path: string) {
-		invoke('open_in_folder', { path })
-			.then(() => {
-				toast.success($t('openedInFileManager'));
-			})
-			.catch((e) => {
-				toast.error($t('openInFileManagerFailed'), {
-					description: e
-				});
+		try {
+			await invoke('open_in_folder', { path });
+			toast.success($t('openedInFileManager'));
+		} catch (e) {
+			toast.error($t('openInFileManagerFailed'), {
+				description: e as string
 			});
+		}
 	}
 
 	// 计算录制时长，传入开始时间和结束时间，结束时间如果为 0, 则计算到当前时间

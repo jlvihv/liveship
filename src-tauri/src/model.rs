@@ -169,6 +169,21 @@ pub struct RecordingPlan {
     pub updated_at: i64,
     // 直播间信息
     pub live_info: Option<LiveInfo>,
+    // 录制选项
+    #[serde(default)]
+    pub option: RecordingOption,
+}
+
+// 录制选项
+#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+#[serde(rename_all = "camelCase", default)]
+pub struct RecordingOption {
+    // 使用代理
+    pub use_proxy: Option<String>,
+    // 自动转 mp4
+    pub auto_convert_to_mp4: bool,
+    // 删除原文件
+    pub delete_original_file: bool,
 }
 
 // 录制策略
@@ -246,6 +261,7 @@ pub mod plan {
             url: &str,
             stream_protocol: StreamingProtocol,
             stream_resolution: String,
+            option: Option<RecordingOption>,
         ) -> RecordingPlan {
             RecordingPlan {
                 url: url.into(),
@@ -256,11 +272,12 @@ pub mod plan {
                 live_info: None,
                 stream_protocol,
                 stream_resolution,
+                option: option.unwrap_or_default(),
             }
         }
 
         pub fn new_with_url(url: &str) -> RecordingPlan {
-            RecordingPlan::new(url, StreamingProtocol::Flv, "".into())
+            RecordingPlan::new(url, StreamingProtocol::Flv, "".into(), None)
         }
     }
 }

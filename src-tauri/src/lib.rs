@@ -13,6 +13,7 @@ mod utils;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
@@ -57,6 +58,7 @@ pub fn run() {
             manager::request_api::try_request_get_status,
             manager::request_api::request_post,
             manager::my_utils::get_youtube_info,
+            manager::my_utils::get_system_proxy_info,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

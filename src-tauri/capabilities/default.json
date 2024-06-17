@@ -26,6 +26,8 @@
 					"url": "https://*"
 				}
 			]
-		}
+		},
+		"os:default",
+		"os:allow-platform"
 	]
 }

@@ -18,7 +18,8 @@ export async function getLiveInfoForDouyin(url: string): Promise<LiveInfo> {
 		// 首先请求页面内容
 		const resp = await fetch(url, {
 			method: 'GET',
-			headers: getHeaders()
+			headers: getHeaders(),
+			connectTimeout: 10000,
 		});
 		let html = await resp.text();
 		console.log('douyin html', html);

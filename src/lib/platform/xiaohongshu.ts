@@ -22,7 +22,8 @@ export async function getLiveInfoForXiaohongshu(url: string): Promise<LiveInfo> 
 	try {
 		let resp = await fetch(appApi, {
 			method: 'GET',
-			headers: getHeaders()
+			headers: getHeaders(),
+			connectTimeout: 10000
 		});
 		let json = JSON.parse(await resp.text());
 		if (json.code != 0) {
@@ -40,14 +41,12 @@ export async function getLiveInfoForXiaohongshu(url: string): Promise<LiveInfo> 
 			resolution: 'default'
 		});
 		// 请求该 url，如果返回 404，则说明未直播
-		// let resp2 = await fetch(url, {
-		// 	method: 'GET',
-		// 	headers: getHeaders(),
-		// 	connectTimeout: 1000
-		// });
-		// if (resp2.status === 200) {
-		let status = await invoke('try_request_get_status', { url, headers: getHeaders(), timeout: 1 });
-		if ((status as number) === 200) {
+		let status: number = await invoke('try_request_get_status', {
+			url,
+			headers: getHeaders(),
+			timeout: 1
+		});
+		if (status === 200) {
 			info.status = LiveStatus.Live;
 		}
 	} catch (e) {

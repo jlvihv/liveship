@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '@/translations';
 	import { backOut } from 'svelte/easing';
 	import { scale } from 'svelte/transition';
 
@@ -21,7 +22,7 @@
 			class="icon-[fluent--chevron-right-28-regular] h-full w-5 font-bold transition-transform"
 			class:rotate-90={isOpen}
 		></span>
-		<h2 class="flex h-full flex-1 items-center text-lg">高级选项</h2>
+		<h2 class="flex h-full flex-1 items-center text-lg">{$t('advancedOptions')}</h2>
 	</div>
 	{#if isOpen}
 		<div transition:scale={{ duration: 300, easing: backOut, start: 0.9 }}>

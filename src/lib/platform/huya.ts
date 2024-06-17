@@ -19,7 +19,8 @@ export async function getLiveInfoForHuya(url: string): Promise<LiveInfo> {
 		// 首先请求页面内容
 		let resp = await fetch(url, {
 			method: 'GET',
-			headers: getHeaders()
+			headers: getHeaders(),
+			connectTimeout: 10000,
 		});
 		let html = await resp.text();
 		// 解析 html，填充 LiveInfo

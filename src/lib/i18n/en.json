@@ -76,7 +76,8 @@
 	"ffmpegPathAvailable": "FFmpeg path is available",
 	"ffmpegPathUnavailable": "FFmpeg path is not available",
 	"check": "Check",
-	"savePath": "File save path",
+	"savePath": "Video save location",
+	"savePathPlaceholder": "Folder where videos are saved",
 	"pollInterval": "Poll interval for live broadcast information (in seconds)",
 	"save": "Save",
 	"language": "Language",
@@ -138,5 +139,8 @@
 	"recentSearch": "Recent search",
 	"tryThese": "Don't know how to start? Try these",
 	"gotoRecordHistory": "Go to record history to view",
-	"parseError": "Failed to parse live stream address, please refresh and try again"
+	"parseError": "Failed to parse live stream address, please refresh and try again",
+	"useProxy": "Use proxy to record",
+	"useProxyPlaceholder": "Please enter the proxy address",
+	"advancedOptions": "Advanced options"
 }

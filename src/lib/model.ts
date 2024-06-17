@@ -49,6 +49,10 @@ export enum RecordingStatus {
 	NotRecording = 'NotRecording'
 }
 
+export interface RecordingOption {
+	useProxy: String | null | undefined;
+}
+
 export interface RecordingHistory {
 	url: string;
 	status: RecordingStatus;

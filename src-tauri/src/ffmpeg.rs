@@ -3,7 +3,7 @@ pub use anyhow::Result;
 use ffmpeg_sidecar::download::{download_ffmpeg_package, ffmpeg_download_url, unpack_ffmpeg};
 use std::process::{Child, Stdio};
 
-use crate::config::config_dir;
+use crate::{config::config_dir, model::RecordingOption};
 
 /// 给定 ffmpeg 命令，这里只负责执行
 pub fn execute_ffmpeg_command(ffmpeg_command: Vec<String>) -> Result<Child> {
@@ -54,8 +54,16 @@ pub fn execute_ffmpeg_command_return_output(ffmpeg_command: Vec<String>) -> Resu
     Ok(stdout.to_string())
 }
 
-pub fn record(ffmpeg_path: &str, url: &str, filename: &str) -> Result<Child> {
-    println!("开始录制：{} -> {}", url, filename);
+pub fn record(
+    ffmpeg_path: &str,
+    url: &str,
+    filename: &str,
+    option: Option<RecordingOption>,
+) -> Result<Child> {
+    println!(
+        "开始录制：{} -> {}, recording option: {:?}",
+        url, filename, option
+    );
 
     // 调用 ffmpeg 命令
     let mut cmd = std::process::Command::new(ffmpeg_path);
@@ -66,7 +74,11 @@ pub fn record(ffmpeg_path: &str, url: &str, filename: &str) -> Result<Child> {
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
     cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
-    let ffmpeg_command = build_ffmpeg_record_command(url, filename, None);
+    let ffmpeg_command = build_ffmpeg_record_command(
+        url,
+        filename,
+        option.map(|o| o.use_proxy).unwrap_or_default(),
+    );
     cmd.args(&ffmpeg_command);
     let mut child = cmd.spawn()?;
     // 立刻 try_wait 一下，看是否有错误
@@ -95,8 +107,12 @@ fn build_ffmpeg_record_command(url: &str, filename: &str, proxy: Option<String>)
     let probesize = "10000000";
     let bufsize = "8000k";
     let max_muxing_queue_size = "1024";
-
-    let mut ffmpeg_command = vec![
+    let mut ffmpeg_command = vec![];
+    if let Some(proxy) = &proxy {
+        println!("proxy: {}", proxy);
+        ffmpeg_command.extend_from_slice(&["-http_proxy", proxy.as_str()] as &[&str]);
+    }
+    let record_command = vec![
         "-y",
         "-v",
         "verbose",
@@ -108,7 +124,7 @@ fn build_ffmpeg_record_command(url: &str, filename: &str, proxy: Option<String>)
         "-user_agent",
         user_agent,
         "-protocol_whitelist",
-        "rtmp,crypto,file,http,https,tcp,tls,udp,rtp",
+        "rtmp,crypto,file,http,https,tcp,tls,udp,rtp,httpproxy",
         "-thread_queue_size",
         "1024",
         "-analyzeduration",
@@ -132,12 +148,10 @@ fn build_ffmpeg_record_command(url: &str, filename: &str, proxy: Option<String>)
         "-correct_ts_overflow",
         "1",
     ];
-    if let Some(proxy) = &proxy {
-        ffmpeg_command.extend_from_slice(&["-http_proxy", proxy.as_str()] as &[&str]);
-    }
     let push_command = [
         "-c:v", "copy", "-c:a", "copy", "-map", "0", "-f", "mpegts", filename,
     ];
+    ffmpeg_command.extend_from_slice(&record_command);
     ffmpeg_command.extend_from_slice(&push_command);
     ffmpeg_command.into_iter().map(|s| s.into()).collect()
 }
@@ -239,7 +253,7 @@ mod tests {
     async fn test_record() {
         let url = "http://pull-hls-l13.douyincdn.com/stage/stream-691574246930121144_or4.m3u8?expire=1715939773&sign=f73837f8a9bac9cac894a331e8a621cf";
         let filename = "test.ts";
-        let child = record("ffmpeg", url, filename).unwrap();
+        let child = record("ffmpeg", url, filename, None).unwrap();
         let output = child.wait_with_output().unwrap();
         let stdout = String::from_utf8_lossy(&output.stdout);
         let stderr = String::from_utf8_lossy(&output.stderr);

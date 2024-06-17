@@ -19,6 +19,7 @@ export async function getLiveInfoForTwitch(url: string): Promise<LiveInfo> {
 		let resp = await fetch('https://gql.twitch.tv/gql', {
 			method: 'POST',
 			headers: getHeadersForStream(),
+			connectTimeout: 10000,
 			body: JSON.stringify({
 				operationName: 'PlaybackAccessToken_Template',
 				query:

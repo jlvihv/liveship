@@ -17,7 +17,8 @@
 		type LiveInfo,
 		type Stream,
 		type RecordingPlan,
-		StreamingProtocol
+		StreamingProtocol,
+		type RecordingOption
 	} from '$lib/model';
 	import { t } from '@/translations';
 	import Button from '$lib/components/button.svelte';
@@ -35,6 +36,8 @@
 	let streamUrl = $state('');
 	let errorMessage = $state('');
 	let inPlan = $state(false);
+	let useProxy = $state(false);
+	let recordingOption: RecordingOption = $state({ useProxy: null });
 	let queryHistory: { url: string; anchorName: string; platformKind: PlatformKind }[] = $state([]);
 	const tryLinks: string[] = [
 		'https://live.douyin.com/790601393533',
@@ -52,7 +55,7 @@
 	let requesting = $state(false); // 表示是否正在请求 live info
 	let advancedOptions = $state(false);
 
-	onMount(() => {
+	onMount(async () => {
 		// 组件挂载时，设置 visible 为 true，以触发过渡动画
 		visible = true;
 
@@ -60,7 +63,7 @@
 		// 从 localStorage 中获取 ffmpegDownloading，如果正在下载中，就不用管了
 		if (localStorage.getItem('ffmpegDownloading') !== 'true') {
 			try {
-				invoke('check_ffmpeg_availability');
+				await invoke('check_ffmpeg_availability');
 				// 如果已经安装了 ffmpeg，什么也不做
 			} catch (e) {
 				// 没安装 ffmpeg，弹出对话框
@@ -72,6 +75,14 @@
 		let history = localStorage.getItem('queryHistory');
 		if (history) {
 			queryHistory = JSON.parse(history);
+		}
+
+		// 获取系统代理
+		try {
+			let proxy = await invoke('get_system_proxy_info');
+			console.log('proxy: ', proxy);
+		} catch (e) {
+			console.error('get system proxy error: ', e);
 		}
 	});
 
@@ -129,6 +140,23 @@
 		}
 	}
 
+	async function handleUseProxyChange(event: Event) {
+		try {
+			await tick();
+			if (event.target === null) {
+				throw new Error('Event target is null');
+			}
+			const checked = (event.target as HTMLInputElement).checked;
+			if (checked) {
+				recordingOption.useProxy = await invoke('get_system_proxy_info');
+			} else {
+				recordingOption.useProxy = null;
+			}
+		} catch (e) {
+			console.error('handle use proxy change error: ', e);
+		}
+	}
+
 	async function handleAddPlan(enabled: boolean) {
 		if (url == '') {
 			toast.error($t('pleaseInputLiveAddress'));
@@ -148,7 +176,7 @@
 				createdAt: new Date().getTime(),
 				updatedAt: new Date().getTime()
 			};
-			invoke('add_plan', { plan });
+			await invoke('add_plan', { plan });
 			if (enabled) {
 				toast.success($t('planEnabled'));
 			} else {
@@ -165,8 +193,7 @@
 	// 获取对应 url 的计划信息
 	async function getPlan(): Promise<RecordingPlan | null> {
 		try {
-			let data = await invoke('get_plan', { url });
-			let plan = data as RecordingPlan;
+			let plan: RecordingPlan = await invoke('get_plan', { url });
 			return plan;
 		} catch (e) {
 			return null;
@@ -196,7 +223,8 @@
 			recordStatus = await invoke('start_record', {
 				autoRecord,
 				stream,
-				liveInfo: liveInfo!
+				liveInfo: liveInfo!,
+				option: recordingOption
 			});
 			toast.success($t('recordAlreadyStarted'));
 			await isInPlan();
@@ -233,7 +261,7 @@
 		// 写入 localStorage，表示正在下载中
 		localStorage.setItem('ffmpegDownloading', 'true');
 		try {
-			invoke('download_ffmpeg');
+			await invoke('download_ffmpeg');
 			toast.success($t('downloadedFFmpeg'));
 		} catch (e) {
 			toast.error($t('downloadFFmpegFailed'), {
@@ -277,7 +305,7 @@
 
 {#if visible}
 	<div
-		class="flex h-screen flex-col items-center justify-start"
+		class="mb-8 flex flex-col items-center justify-start"
 		transition:scale={{ duration: 300, easing: backOut, start: 0.9 }}
 	>
 		<div
@@ -303,6 +331,8 @@
 							url = '';
 							liveInfo = undefined;
 							errorMessage = '';
+							useProxy = false;
+							recordingOption = {useProxy:null}
 						}}
 					>
 						<span
@@ -416,29 +446,49 @@
 													class="toggle"
 													type="checkbox"
 													bind:checked={inPlan}
-													onclick={handleCheckedPlan}
+													onchange={handleCheckedPlan}
 												/>
 												{inPlan ? $t('inPlan') : $t('notInPlan')}</label
 											>
 										{/if}
 									</div>
 								</div>
-								<!-- <CollapsiblePanel isOpen={advancedOptions} className="pt-12">
-									<div class="grid grid-cols-2 gap-4 pt-8">
-										<label for="useProxy" class="flex w-full cursor-pointer items-center gap-4">
-											<input id="useProxy" class="checkbox" type="checkbox" />
-											使用代理录制</label
-										>
-										<label for="convertToMp4" class="flex w-full cursor-pointer items-center gap-4">
+								{#if recordStatus === RecordingStatus.NotRecording}
+									<CollapsiblePanel isOpen={advancedOptions} className="pt-12">
+										<div class="grid grid-cols-2 gap-4 pt-8">
+											<label for="useProxy" class="flex w-full cursor-pointer items-center gap-4">
+												<input
+													id="useProxy"
+													class="checkbox"
+													type="checkbox"
+													bind:checked={useProxy}
+													onchange={handleUseProxyChange}
+												/>
+												{$t('useProxy')}</label
+											>
+											{#if useProxy}
+												<label
+													class="flex items-center rounded-xl bg-gray1 forced-color-adjust-none"
+												>
+													<input
+														type="text"
+														class="m-0 grow resize-none appearance-none overflow-hidden bg-transparent px-0 py-4 pl-4 placeholder-gray2 outline-none focus:text-white1"
+														placeholder={$t('useProxyPlaceholder')}
+														bind:value={recordingOption.useProxy}
+													/>
+												</label>
+											{/if}
+											<!-- <label for="convertToMp4" class="flex w-full cursor-pointer items-center gap-4">
 											<input id="convertToMp4" class="checkbox" type="checkbox" />
 											录制结束后自动转换为 mp4</label
 										>
 										<label for="autoSplit" class="flex w-full cursor-pointer items-center gap-4">
 											<input id="autoSplit" class="checkbox" type="checkbox" />
 											自动切分文件</label
-										>
-									</div>
-								</CollapsiblePanel> -->
+										> -->
+										</div>
+									</CollapsiblePanel>
+								{/if}
 								<div class="pt-12">
 									<div class="flex justify-center p-4">
 										{#if loading}
@@ -482,7 +532,7 @@
 				{/if}
 			</div>
 		{:else}
-			<div class="container mb-8 mt-16 w-1/2 min-w-[600px] gap-8 overflow-y-auto overflow-x-clip">
+			<div class="container mb-8 mt-16 w-1/2 min-w-[600px] gap-8 overflow-x-clip">
 				{#if queryHistory.length <= 5}
 					<h3 class="pb-4 font-bold">{$t('tryThese')}</h3>
 					<div>

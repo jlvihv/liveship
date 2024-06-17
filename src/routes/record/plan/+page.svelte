@@ -31,56 +31,50 @@
 	});
 
 	async function getAllPlans() {
-		invoke('get_all_plans')
-			.then((data) => {
-				list = data as RecordingPlan[];
-			})
-			.catch((e) => {
-				toast.error($t('getRecordPlanFailed'), {
-					description: e
-				});
+		try {
+			list = await invoke('get_all_plans');
+		} catch (e) {
+			toast.error($t('getRecordPlanFailed'), {
+				description: e as string
 			});
+		}
 	}
 
 	async function deletePlan(url: string) {
 		closeDialog(deletePlanDialogId);
 		dialogUrl = '';
-		invoke('delete_plan', { url })
-			.then(() => {
-				toast.success($t('deleteSuccess'));
-				getAllPlans();
-			})
-			.catch((e) => {
-				toast.error($t('deleteFailed'), {
-					description: e
-				});
+		try {
+			await invoke('delete_plan', { url });
+			toast.success($t('deleteSuccess'));
+			await getAllPlans();
+		} catch (e) {
+			toast.error($t('deleteFailed'), {
+				description: e as string
 			});
+		}
 	}
 
 	async function updatePlanStatus(url: string, enabled: boolean) {
-		invoke('update_plan_status', { url, enabled })
-			.then(() => {
-				toast.success($t('updateSuccess'));
-				getAllPlans();
-			})
-			.catch((e) => {
-				toast.error($t('updateFailed'), {
-					description: e
-				});
+		try {
+			await invoke('update_plan_status', { url, enabled });
+			toast.success($t('updateSuccess'));
+			await getAllPlans();
+		} catch (e) {
+			toast.error($t('updateFailed'), {
+				description: e as string
 			});
+		}
 	}
 
 	// 获取最新一次轮询时间
 	async function getLastPollingTime() {
-		invoke('get_last_polling_time')
-			.then((data) => {
-				lastPollingTime = data as number;
-			})
-			.catch((e) => {
-				toast.error($t('getLatestPollTimeFailed'), {
-					description: e
-				});
+		try {
+			lastPollingTime = await invoke('get_last_polling_time');
+		} catch (e) {
+			toast.error($t('getLatestPollTimeFailed'), {
+				description: e as string
 			});
+		}
 	}
 </script>
 
