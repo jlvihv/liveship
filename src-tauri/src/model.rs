@@ -323,6 +323,6 @@ pub struct ProxyConfig {
 pub struct QueryHistory {
     pub url: String,
     pub anchor_name: String,
-    pub platform_kind: PlatformKind,
+    pub platform_kind: String,
     pub created_at: i64,
 }

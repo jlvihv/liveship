@@ -109,7 +109,6 @@ fn build_ffmpeg_record_command(url: &str, filename: &str, proxy: Option<String>)
     let max_muxing_queue_size = "1024";
     let mut ffmpeg_command = vec![];
     if let Some(proxy) = &proxy {
-        println!("proxy: {}", proxy);
         ffmpeg_command.extend_from_slice(&["-http_proxy", proxy.as_str()] as &[&str]);
     }
     let record_command = vec![

@@ -296,7 +296,6 @@ pub mod query_history {
 
     #[tauri::command]
     pub async fn add_query_history(history: QueryHistory) -> Result<(), String> {
-        println!("add_query_history: {:?}", history);
         kv::query_history::add(&history).map_err(|e| {
             eprintln!("Could not add query history: {}", e);
             e.to_string()

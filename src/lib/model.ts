@@ -102,6 +102,6 @@ export interface ProxyConfig {
 export interface QueryHistory {
 	url: string;
 	anchorName: string;
-	platformKind: PlatformKind;
+	platformKind: string;
 	createdAt: number;
 }

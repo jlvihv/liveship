@@ -39,7 +39,7 @@
 	let errorMessage = $state('');
 	let inPlan = $state(false);
 	let useProxy = $state(false);
-	let recordingOption: RecordingOption = $state({ useProxy: null });
+	let proxyAddress = $state('');
 	let queryHistory: { url: string; anchorName: string; platformKind: PlatformKind }[] = $state([]);
 	const tryLinks: string[] = [
 		'https://live.douyin.com/790601393533',
@@ -107,14 +107,14 @@
 				streamUrl = liveInfo.streams[0].url;
 			}
 
-			let queryHistory: QueryHistory = {
+			let newQueryHistory: QueryHistory = {
 				url,
 				anchorName: liveInfo.anchorName,
 				platformKind: liveInfo.platformKind,
 				createdAt: new Date().getTime()
 			};
 			await invoke('add_query_history', {
-				history: queryHistory
+				history: newQueryHistory
 			});
 			queryHistory = await invoke('get_all_query_history');
 		} catch (err) {
@@ -155,11 +155,9 @@
 			const checked = (event.target as HTMLInputElement).checked;
 			if (checked) {
 				const proxyConfig = await getProxyConfig();
-				if (proxyConfig && recordingOption.useProxy === null) {
-					recordingOption.useProxy = proxyConfig.address;
+				if (proxyConfig && proxyAddress === '') {
+					proxyAddress = proxyConfig.address;
 				}
-			} else {
-				recordingOption.useProxy = null;
 			}
 		} catch (e) {
 			console.error('handle use proxy change error: ', e);
@@ -233,7 +231,7 @@
 				autoRecord,
 				stream,
 				liveInfo: liveInfo!,
-				option: recordingOption
+				option: getRecordingOption()
 			});
 			toast.success($t('recordAlreadyStarted'));
 			await isInPlan();
@@ -243,6 +241,18 @@
 			});
 		}
 		loading = false;
+	}
+
+	function getRecordingOption(): RecordingOption {
+		if (useProxy) {
+			return {
+				useProxy: proxyAddress
+			};
+		} else {
+			return {
+				useProxy: undefined
+			};
+		}
 	}
 
 	async function stopRecord() {
@@ -279,6 +289,14 @@
 		}
 		// 最后，删除 localStorage 中的 ffmpegDownloading
 		localStorage.removeItem('ffmpegDownloading');
+	}
+
+	function clear() {
+		inputRef!.value = '';
+		url = '';
+		liveInfo = undefined;
+		errorMessage = '';
+		useProxy = false;
 	}
 </script>
 
@@ -335,14 +353,7 @@
 					<button
 						class="tooltip ml-4 mr-2 flex items-center"
 						data-tip={$t('clear')}
-						onclick={() => {
-							inputRef!.value = '';
-							url = '';
-							liveInfo = undefined;
-							errorMessage = '';
-							useProxy = false;
-							recordingOption.useProxy = null;
-						}}
+						onclick={() => clear()}
 					>
 						<span
 							class="icon-[fluent--dismiss-circle-28-regular] h-6 w-6 text-gray-500 hover:text-white"
@@ -486,7 +497,7 @@
 														type="text"
 														class="m-0 grow resize-none appearance-none overflow-hidden bg-transparent px-0 py-4 pl-4 placeholder-gray2 outline-none focus:text-white1"
 														placeholder={$t('useProxyPlaceholder')}
-														bind:value={recordingOption.useProxy}
+														bind:value={proxyAddress}
 													/>
 												</label>
 											{/if}
