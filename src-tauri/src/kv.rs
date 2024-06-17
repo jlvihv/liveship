@@ -395,8 +395,7 @@ pub mod query_history {
         let write_txn = db().begin_write()?;
         {
             let mut table = write_txn.open_table(TABLE)?;
-            let now = chrono::Utc::now().timestamp_millis();
-            let key = format!("query_history:{}:{}", history.url, now);
+            let key = format!("query_history:{}", history.url);
             let history = serde_json::to_vec(history)?;
             table.insert(key.as_str(), &*history)?;
         }
@@ -408,13 +407,33 @@ pub mod query_history {
         let mut histories = VecDeque::new();
         let read_txn = db().begin_read()?;
         let table = read_txn.open_table(TABLE)?;
-        let iter = table.range("query_history:".."query_history")?;
+        let iter = table.range("query_history:".."query_historyz")?;
         for kv in iter {
             let (_, history) = kv?;
             let history: QueryHistory = serde_json::from_slice(&history.value())?;
             histories.push_front(history);
         }
-        Ok(histories.into())
+        let mut histories: Vec<QueryHistory> = histories.into();
+        sort(&mut histories);
+        Ok(histories)
+    }
+
+    pub fn delete(url: &str) -> Result<()> {
+        let write_txn = db().begin_write()?;
+        {
+            let mut table = write_txn.open_table(TABLE)?;
+            table.remove(format!("query_history:{}", url).as_str())?;
+        }
+        write_txn.commit()?;
+        Ok(())
+    }
+
+    fn sort(histories: &mut Vec<QueryHistory>) {
+        // 只留下 100 条
+        if histories.len() > 100 {
+            histories.truncate(100);
+        }
+        histories.sort_by(|a, b| b.created_at.cmp(&a.created_at));
     }
 }
 

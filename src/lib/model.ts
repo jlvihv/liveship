@@ -98,3 +98,10 @@ export interface ProxyConfig {
 	enabled: boolean;
 	address: string;
 }
+
+export interface QueryHistory {
+	url: string;
+	anchorName: string;
+	platformKind: PlatformKind;
+	createdAt: number;
+}

@@ -18,7 +18,8 @@
 		type Stream,
 		type RecordingPlan,
 		StreamingProtocol,
-		type RecordingOption
+		type RecordingOption,
+		type QueryHistory
 	} from '$lib/model';
 	import { t } from '@/translations';
 	import Button from '$lib/components/button.svelte';
@@ -45,7 +46,8 @@
 		'https://www.huya.com/kpl',
 		'https://www.twitch.tv/quantumapprentice',
 		'https://www.tiktok.com/@mpl.id.official/live',
-		'https://www.xiaohongshu.com/hina/livestream/569260855275038789?timestamp=1718351056826&share_source=&share_source_id=null&source=share_out_of_app&host_id=655924fd000000000802cb9e&xhsshare=WeixinSession&appuid=5ed89960000000000101fdef&apptime=1718351058&share_id=4dc90ecf237d4ef7bd112b5b3d96a425'
+		'https://www.xiaohongshu.com/hina/livestream/569260855275038789?timestamp=1718351056826&share_source=&share_source_id=null&source=share_out_of_app&host_id=655924fd000000000802cb9e&xhsshare=WeixinSession&appuid=5ed89960000000000101fdef&apptime=1718351058&share_id=4dc90ecf237d4ef7bd112b5b3d96a425',
+		'https://www.youtube.com/watch?v=5eElYq3JlRQ'
 	];
 
 	// ui 状态变量
@@ -72,10 +74,10 @@
 			}
 		}
 
-		// 从 localStorage 中获取 queryHistory
-		let history = localStorage.getItem('queryHistory');
-		if (history) {
-			queryHistory = JSON.parse(history);
+		try {
+			queryHistory = await invoke('get_all_query_history');
+		} catch (e) {
+			console.error('get query history error: ', e);
 		}
 	});
 
@@ -101,24 +103,35 @@
 			liveInfo = await getLiveInfoForPlatform(url);
 			recordStatus = await invoke('record_status', { url });
 			await isInPlan();
-
 			if (liveInfo.streams.length > 0) {
 				streamUrl = liveInfo.streams[0].url;
 			}
 
-			// 将 url 加入 queryHistory
-			queryHistory = queryHistory.filter((h) => h.url !== url);
-			queryHistory.unshift({
+			let queryHistory: QueryHistory = {
 				url,
 				anchorName: liveInfo.anchorName,
-				platformKind: liveInfo.platformKind
+				platformKind: liveInfo.platformKind,
+				createdAt: new Date().getTime()
+			};
+			await invoke('add_query_history', {
+				history: queryHistory
 			});
-			// queryHistory = queryHistory.slice(0, 8);
-			localStorage.setItem('queryHistory', JSON.stringify(queryHistory));
+			queryHistory = await invoke('get_all_query_history');
 		} catch (err) {
 			errorMessage = $t('parseError');
 		}
 		requesting = false;
+	}
+
+	async function deleteQueryHistory(url: string) {
+		try {
+			await invoke('delete_query_history', {
+				url
+			});
+			queryHistory = await invoke('get_all_query_history');
+		} catch (e) {
+			console.error('delete query history error: ', e);
+		}
 	}
 
 	async function handleCheckedPlan(event: Event) {
@@ -576,8 +589,7 @@
 							<button
 								class="icon-[fluent--dismiss-circle-28-regular] mr-8 h-4 w-4 px-2 text-gray-600 opacity-0 hover:text-white group-hover:opacity-100"
 								onclick={() => {
-									queryHistory = queryHistory.filter((item) => item.url !== history.url);
-									localStorage.setItem('queryHistory', JSON.stringify(queryHistory));
+									deleteQueryHistory(history.url);
 								}}
 							></button>
 						</div>

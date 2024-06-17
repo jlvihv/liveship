@@ -289,6 +289,40 @@ pub mod plan {
     }
 }
 
+pub mod query_history {
+    use crate::model::QueryHistory;
+
+    use super::*;
+
+    #[tauri::command]
+    pub async fn add_query_history(history: QueryHistory) -> Result<(), String> {
+        println!("add_query_history: {:?}", history);
+        kv::query_history::add(&history).map_err(|e| {
+            eprintln!("Could not add query history: {}", e);
+            e.to_string()
+        })?;
+        Ok(())
+    }
+
+    #[tauri::command]
+    pub async fn get_all_query_history() -> Result<Vec<QueryHistory>, String> {
+        let histories = kv::query_history::get_all().map_err(|e| {
+            eprintln!("Could not get all query histories: {}", e);
+            e.to_string()
+        })?;
+        Ok(histories)
+    }
+
+    #[tauri::command]
+    pub async fn delete_query_history(url: String) -> Result<(), String> {
+        kv::query_history::delete(&url).map_err(|e| {
+            eprintln!("Could not delete query history: {}", e);
+            e.to_string()
+        })?;
+        Ok(())
+    }
+}
+
 pub mod history {
     use super::*;
 
@@ -504,7 +538,7 @@ pub mod my_utils {
                     match reqwest::Proxy::all(proxy.address) {
                         Ok(p) => Some(p),
                         Err(e) => {
-                            println!("can not set system http proxy: {}", e);
+                            eprintln!("can not set system http proxy: {}", e);
                             None
                         }
                     }
@@ -513,7 +547,7 @@ pub mod my_utils {
                 };
             }
             Err(e) => {
-                println!("can not get system http proxy: {}", e);
+                eprintln!("can not get system http proxy: {}", e);
             }
         }
         let video = Video::new_with_options(&url, video_options)

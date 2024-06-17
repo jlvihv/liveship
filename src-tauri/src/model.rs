@@ -324,4 +324,5 @@ pub struct QueryHistory {
     pub url: String,
     pub anchor_name: String,
     pub platform_kind: PlatformKind,
+    pub created_at: i64,
 }
