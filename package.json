@@ -15,7 +15,7 @@
   "dependencies": {
     "@tauri-apps/api": "^2.0.0-beta.13",
     "@tauri-apps/plugin-dialog": "^2.0.0-beta.5",
-    "@tauri-apps/plugin-http": "^2.0.0-beta.5",
+    "@tauri-apps/plugin-http": "^2.0.0-beta.6",
     "@tauri-apps/plugin-os": "^2.0.0-beta.5",
     "@tauri-apps/plugin-shell": "^2.0.0-beta.6",
     "@types/crypto-js": "^4.2.2",
@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "@iconify-json/bxs": "^1.1.10",
-    "@iconify-json/fluent": "^1.1.56",
+    "@iconify-json/fluent": "^1.1.57",
     "@iconify-json/icomoon-free": "^1.1.8",
     "@iconify/tailwind": "^1.1.1",
     "@sveltejs/adapter-static": "^3.0.2",

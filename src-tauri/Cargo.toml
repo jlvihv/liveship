@@ -1,6 +1,6 @@
 [package]
 name = "liveship"
-version = "0.1.20"
+version = "0.1.21"
 description = "liveship is a compact and user-friendly live stream recording tool that captures live streams as video files."
 authors = ["jlvihv"]
 email = "imvihv@gmail.com"
