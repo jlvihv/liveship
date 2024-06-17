@@ -25,6 +25,7 @@
 	import { scale } from 'svelte/transition';
 	import { backOut } from 'svelte/easing';
 	import CollapsiblePanel from '@/components/CollapsiblePanel.svelte';
+	import { getProxyConfig } from '@/proxy';
 
 	// 关键信息变量
 
@@ -75,14 +76,6 @@
 		let history = localStorage.getItem('queryHistory');
 		if (history) {
 			queryHistory = JSON.parse(history);
-		}
-
-		// 获取系统代理
-		try {
-			let proxy = await invoke('get_system_proxy_info');
-			console.log('proxy: ', proxy);
-		} catch (e) {
-			console.error('get system proxy error: ', e);
 		}
 	});
 
@@ -148,7 +141,10 @@
 			}
 			const checked = (event.target as HTMLInputElement).checked;
 			if (checked) {
-				recordingOption.useProxy = await invoke('get_system_proxy_info');
+				const proxyConfig = await getProxyConfig();
+				if (proxyConfig && recordingOption.useProxy === null) {
+					recordingOption.useProxy = proxyConfig.address;
+				}
 			} else {
 				recordingOption.useProxy = null;
 			}
@@ -332,7 +328,7 @@
 							liveInfo = undefined;
 							errorMessage = '';
 							useProxy = false;
-							recordingOption = {useProxy:null}
+							recordingOption.useProxy = null;
 						}}
 					>
 						<span
@@ -456,7 +452,10 @@
 								{#if recordStatus === RecordingStatus.NotRecording}
 									<CollapsiblePanel isOpen={advancedOptions} className="pt-12">
 										<div class="grid grid-cols-2 gap-4 pt-8">
-											<label for="useProxy" class="flex w-full cursor-pointer items-center gap-4">
+											<label
+												for="useProxy"
+												class="flex w-full cursor-pointer items-center gap-4 py-4"
+											>
 												<input
 													id="useProxy"
 													class="checkbox"

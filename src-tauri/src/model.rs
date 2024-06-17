@@ -310,3 +310,18 @@ pub mod platform {
         }
     }
 }
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProxyConfig {
+    pub enabled: bool,
+    pub address: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct QueryHistory {
+    pub url: String,
+    pub anchor_name: String,
+    pub platform_kind: PlatformKind,
+}

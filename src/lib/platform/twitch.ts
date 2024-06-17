@@ -1,4 +1,5 @@
 import { LiveStatus, PlatformKind, StreamingProtocol, type LiveInfo, type Stream } from '@/model';
+import { getProxyForFetch } from '@/proxy';
 import { fetch } from '@tauri-apps/plugin-http';
 
 export async function getLiveInfoForTwitch(url: string): Promise<LiveInfo> {
@@ -20,6 +21,9 @@ export async function getLiveInfoForTwitch(url: string): Promise<LiveInfo> {
 			method: 'POST',
 			headers: getHeadersForStream(),
 			connectTimeout: 10000,
+			proxy: {
+				all: await getProxyForFetch()
+			},
 			body: JSON.stringify({
 				operationName: 'PlaybackAccessToken_Template',
 				query:

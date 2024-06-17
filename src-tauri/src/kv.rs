@@ -1,6 +1,7 @@
 use crate::config::config_dir;
 use crate::model::AppConfig;
 use crate::model::LiveInfo;
+use crate::model::QueryHistory;
 use crate::model::RecordingHistory;
 use crate::model::RecordingPlan;
 use anyhow::Result;
@@ -382,6 +383,38 @@ pub mod live {
             }
             None => Ok(None),
         }
+    }
+}
+
+pub mod query_history {
+    use std::collections::VecDeque;
+
+    use super::*;
+
+    pub fn add(history: &QueryHistory) -> Result<()> {
+        let write_txn = db().begin_write()?;
+        {
+            let mut table = write_txn.open_table(TABLE)?;
+            let now = chrono::Utc::now().timestamp_millis();
+            let key = format!("query_history:{}:{}", history.url, now);
+            let history = serde_json::to_vec(history)?;
+            table.insert(key.as_str(), &*history)?;
+        }
+        write_txn.commit()?;
+        Ok(())
+    }
+
+    pub fn get_all() -> Result<Vec<QueryHistory>> {
+        let mut histories = VecDeque::new();
+        let read_txn = db().begin_read()?;
+        let table = read_txn.open_table(TABLE)?;
+        let iter = table.range("query_history:".."query_history")?;
+        for kv in iter {
+            let (_, history) = kv?;
+            let history: QueryHistory = serde_json::from_slice(&history.value())?;
+            histories.push_front(history);
+        }
+        Ok(histories.into())
     }
 }
 

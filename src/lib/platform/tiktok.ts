@@ -1,4 +1,5 @@
 import { LiveStatus, PlatformKind, StreamingProtocol, type LiveInfo, type Stream } from '@/model';
+import { getProxyForFetch } from '@/proxy';
 import { fetch } from '@tauri-apps/plugin-http';
 
 export async function getLiveInfoForTiktok(url: string): Promise<LiveInfo> {
@@ -19,7 +20,10 @@ export async function getLiveInfoForTiktok(url: string): Promise<LiveInfo> {
 		let resp = await fetch(url, {
 			method: 'GET',
 			headers: getHeaders(),
-			connectTimeout: 10000
+			connectTimeout: 10000,
+			proxy: {
+				all: await getProxyForFetch()
+			}
 		});
 		let html = await resp.text();
 		// 解析 html，填充 LiveInfo
@@ -39,7 +43,6 @@ function parseHtmlAndFillLiveInfo(html: string, info: LiveInfo) {
 		throw new Error('can not match json string');
 	}
 	let json = JSON.parse(jsonStr[1]);
-	console.log('tiktok', json);
 	let liveRoom = json.LiveRoom.liveRoomUserInfo;
 	info.roomCover = liveRoom.liveRoom.coverUrl || '';
 	info.viewerCount = liveRoom.liveRoom.liveRoomStats.userCount.toString() || '';

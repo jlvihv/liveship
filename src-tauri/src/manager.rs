@@ -489,13 +489,35 @@ pub mod request_api {
 }
 
 pub mod my_utils {
-    use rusty_ytdl::{Video, VideoInfo};
+    use rusty_ytdl::{Video, VideoInfo, VideoOptions};
+
+    use crate::model::ProxyConfig;
 
     use super::*;
 
     #[tauri::command]
     pub async fn get_youtube_info(url: String) -> Result<VideoInfo, String> {
-        let video = Video::new(&url).map_err(|e| format!("Could not get video info: {}", e))?;
+        let mut video_options = VideoOptions::default();
+        match get_system_proxy_config().await {
+            Ok(proxy) => {
+                video_options.request_options.proxy = if proxy.enabled {
+                    match reqwest::Proxy::all(proxy.address) {
+                        Ok(p) => Some(p),
+                        Err(e) => {
+                            println!("can not set system http proxy: {}", e);
+                            None
+                        }
+                    }
+                } else {
+                    None
+                };
+            }
+            Err(e) => {
+                println!("can not get system http proxy: {}", e);
+            }
+        }
+        let video = Video::new_with_options(&url, video_options)
+            .map_err(|e| format!("Could not get video info: {}", e))?;
         let video_info = video
             .get_info()
             .await
@@ -504,10 +526,13 @@ pub mod my_utils {
     }
 
     #[tauri::command]
-    pub async fn get_system_proxy_info() -> Result<String, String> {
+    pub async fn get_system_proxy_config() -> Result<ProxyConfig, String> {
         // 读取环境变量中的 http_proxy 或 HTTP_PROXY 或 all_proxy 或 ALL_PROXY
         let proxy = sysproxy::Sysproxy::get_system_proxy()
             .map_err(|e| format!("can not get system http proxy: {}", e.to_string()))?;
-        Ok(format!("http://{}:{}", proxy.host, proxy.port))
+        Ok(ProxyConfig {
+            enabled: proxy.enable,
+            address: format!("http://{}:{}", proxy.host, proxy.port),
+        })
     }
 }

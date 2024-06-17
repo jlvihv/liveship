@@ -1,4 +1,5 @@
 import { LiveStatus, PlatformKind, StreamingProtocol, type LiveInfo } from '@/model';
+import { getProxyForFetch } from '@/proxy';
 // import { invoke } from '@tauri-apps/api/core';
 import { fetch } from '@tauri-apps/plugin-http';
 
@@ -20,9 +21,11 @@ export async function getLiveInfoForDouyin(url: string): Promise<LiveInfo> {
 			method: 'GET',
 			headers: getHeaders(),
 			connectTimeout: 10000,
+			proxy: {
+				all: await getProxyForFetch()
+			}
 		});
 		let html = await resp.text();
-		console.log('douyin html', html);
 		// 解析 html，填充 LiveInfo
 		parseHtmlAndFillLiveInfo(html, info);
 	} catch (e) {
@@ -67,7 +70,6 @@ function parseHtmlAndFillLiveInfo(html: string, info: LiveInfo) {
 	}
 	let roomStore = roomStoreJsonStr.split(',"has_commerce_goods"')[0] + '}}}';
 	let jsonData = JSON.parse(roomStore);
-	console.log('jsonData', jsonData);
 	let room = jsonData.roomInfo.room;
 
 	// 2: 直播中，4: 未直播
@@ -98,7 +100,6 @@ function parseHtmlAndFillLiveInfo(html: string, info: LiveInfo) {
 		});
 	}
 	info.status = LiveStatus.Live;
-	console.log('info', info);
 }
 
 function getHeaders() {

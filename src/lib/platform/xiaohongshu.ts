@@ -1,4 +1,5 @@
 import { LiveStatus, PlatformKind, StreamingProtocol, type LiveInfo } from '@/model';
+import { getProxyForFetch } from '@/proxy';
 import { invoke } from '@tauri-apps/api/core';
 import { fetch } from '@tauri-apps/plugin-http';
 
@@ -23,7 +24,10 @@ export async function getLiveInfoForXiaohongshu(url: string): Promise<LiveInfo> 
 		let resp = await fetch(appApi, {
 			method: 'GET',
 			headers: getHeaders(),
-			connectTimeout: 10000
+			connectTimeout: 10000,
+			proxy: {
+				all: await getProxyForFetch()
+			}
 		});
 		let json = JSON.parse(await resp.text());
 		if (json.code != 0) {

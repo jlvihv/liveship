@@ -93,3 +93,8 @@ export interface Stream {
 	resolution: string;
 	protocol: StreamingProtocol;
 }
+
+export interface ProxyConfig {
+	enabled: boolean;
+	address: string;
+}

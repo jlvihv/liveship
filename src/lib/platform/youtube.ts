@@ -15,7 +15,6 @@ export async function getLiveInfoForYoutube(url: string): Promise<LiveInfo> {
 	};
 	try {
 		let youtubeInfo: any = await invoke('get_youtube_info', { url });
-		console.log('youtube info', youtubeInfo);
 		info.status = youtubeInfo.videoDetails.isLiveContent ? LiveStatus.Live : LiveStatus.NotLive;
 		info.viewerCount = youtubeInfo.videoDetails.viewCount;
 		info.title = youtubeInfo.videoDetails.title;
