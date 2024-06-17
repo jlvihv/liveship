@@ -506,7 +506,7 @@ pub mod my_utils {
     #[tauri::command]
     pub async fn get_system_proxy_info() -> Result<String, String> {
         // 读取环境变量中的 http_proxy 或 HTTP_PROXY 或 all_proxy 或 ALL_PROXY
-        let proxy = sysproxy::Sysproxy::get_http()
+        let proxy = sysproxy::Sysproxy::get_system_proxy()
             .map_err(|e| format!("can not get system http proxy: {}", e.to_string()))?;
         Ok(format!("http://{}:{}", proxy.host, proxy.port))
     }
