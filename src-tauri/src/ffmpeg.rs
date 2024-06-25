@@ -30,7 +30,7 @@ pub fn execute_ffmpeg_command(ffmpeg_command: Vec<String>) -> Result<Child> {
         );
         return Err(anyhow::anyhow!(error_message));
     }
-    println!("录制进程启动：{:?}", child.id());
+    println!("进程启动：{:?}", child.id());
     Ok(child)
 }
 

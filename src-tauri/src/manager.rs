@@ -16,6 +16,9 @@ use std::{path::PathBuf, process::Child};
 // 用一个 dashmap 用来保存已经开始的录制任务
 pub static TASKS: Lazy<DashMap<String, Child>> = Lazy::new(|| DashMap::new());
 
+// 全局 dashmap，键是 id，值是 ffmpeg 进程
+static CHILDS: Lazy<DashMap<u32, Child>> = Lazy::new(|| DashMap::new());
+
 /// 内部方法，不对外暴露
 pub mod inner {
     use super::*;
@@ -417,9 +420,25 @@ pub mod ffmpeg_api {
 
     /// 执行 ffmpeg 命令
     #[tauri::command]
-    pub async fn execute_ffmpeg_command(ffmpeg_command: Vec<String>) -> Result<(), String> {
-        ffmpeg::execute_ffmpeg_command(ffmpeg_command)
+    pub async fn execute_ffmpeg_command(ffmpeg_command: Vec<String>) -> Result<u32, String> {
+        let child = ffmpeg::execute_ffmpeg_command(ffmpeg_command)
             .map_err(|e| format!("Could not run ffmpeg command: {}", e))?;
+        let child_id = child.id();
+        CHILDS.insert(child.id(), child);
+        Ok(child_id)
+    }
+
+    /// 杀掉 ffmpeg 进程
+    #[tauri::command]
+    pub async fn kill_child(id: u32) -> Result<(), String> {
+        if let Some((_id, mut child)) = CHILDS.remove(&id) {
+            child
+                .kill()
+                .map_err(|e| format!("Could not kill child process: {}", e))?;
+            child
+                .wait()
+                .map_err(|e| format!("Could not wait for child process: {}", e))?;
+        }
         Ok(())
     }
 

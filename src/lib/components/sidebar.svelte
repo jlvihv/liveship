@@ -15,11 +15,11 @@
 			href: '/record/plan'
 		},
 		// { label: $t('streamPush'), icon: 'icon-[fluent--video-28-regular]', href: '/live' },
-		// {
-		// 	label: $t('streamForward'),
-		// 	icon: 'icon-[fluent--square-arrow-forward-32-regular]',
-		// 	href: '/live/forward'
-		// },
+		{
+			label: $t('streamForward'),
+			icon: 'icon-[fluent--square-arrow-forward-32-regular]',
+			href: '/live/forward'
+		},
 		{ label: $t('settings'), icon: 'icon-[fluent--settings-32-regular]', href: '/config' }
 	];
 </script>
