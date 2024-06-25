@@ -13,6 +13,7 @@
 	// 关键信息变量
 
 	let url = $state('');
+	let id = $state(0);
 	const xiaohongshuPushServer = 'rtmp://live-push.xhscdn.com/live';
 	let liveInfo: LiveInfo | undefined = $state();
 	let errorMessage = $state('');
@@ -66,9 +67,10 @@
 		}
 		let ffmpegCommand = buildFFmpegForwardCommand(streamUrl, outputUrl);
 		try {
-			await invoke('execute_ffmpeg_command', { ffmpegCommand });
+			id = await invoke('execute_ffmpeg_command', { ffmpegCommand });
 			// 只要不异常，就认为成功了
 			forwarding = true;
+			toast.success('已经开始转发啦');
 		} catch (e) {
 			toast.error(e as string);
 			forwarding = false;
@@ -77,8 +79,9 @@
 
 	async function stopForward() {
 		try {
-			await invoke('stop_ffmpeg_command');
+			await invoke('kill_child', { id });
 			forwarding = false;
+			toast.success('已经停止转发啦');
 		} catch (e) {
 			toast.error(e as string);
 		}

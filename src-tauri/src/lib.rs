@@ -57,6 +57,7 @@ pub fn run() {
             manager::ffmpeg_api::execute_ffmpeg_command,
             manager::ffmpeg_api::execute_ffmpeg_command_return_output,
             manager::ffmpeg_api::get_image_info,
+            manager::ffmpeg_api::kill_child,
             manager::request_api::request,
             manager::request_api::try_request_get_status,
             manager::request_api::request_post,

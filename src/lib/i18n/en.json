@@ -142,5 +142,6 @@
 	"parseError": "Failed to parse live stream address, please refresh and try again",
 	"useProxy": "Use proxy to record",
 	"useProxyPlaceholder": "Please enter the proxy address",
-	"advancedOptions": "Advanced options"
+	"advancedOptions": "Advanced options",
+	"stopForward": "Stop forwarding"
 }
