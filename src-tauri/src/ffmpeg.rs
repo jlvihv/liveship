@@ -3,13 +3,15 @@ pub use anyhow::Result;
 use ffmpeg_sidecar::download::{download_ffmpeg_package, ffmpeg_download_url, unpack_ffmpeg};
 use std::process::{Child, Stdio};
 
-use crate::{config::config_dir, model::RecordingOption};
+use crate::{config::config_dir, kv, model::RecordingOption};
 
 /// 给定 ffmpeg 命令，这里只负责执行
 pub fn execute_ffmpeg_command(ffmpeg_command: Vec<String>) -> Result<Child> {
     println!("ffmpeg_command: {:?}", ffmpeg_command);
     // 调用 ffmpeg 命令
-    let mut cmd = std::process::Command::new("ffmpeg");
+    // 获取配置文件中的 ffmpeg 路径
+    let ffmpeg_path = kv::config::get()?.ffmpeg_path;
+    let mut cmd = std::process::Command::new(ffmpeg_path);
     // 特定于 windows 的实现，使用 CommandExt，避免出现黑窗口
     #[cfg(target_os = "windows")]
     {
@@ -38,7 +40,9 @@ pub fn execute_ffmpeg_command(ffmpeg_command: Vec<String>) -> Result<Child> {
 pub fn execute_ffmpeg_command_return_output(ffmpeg_command: Vec<String>) -> Result<String> {
     println!("ffmpeg_command: {:?}", ffmpeg_command);
     // 调用 ffmpeg 命令
-    let output = std::process::Command::new("ffmpeg")
+    // 获取配置文件中的 ffmpeg 路径
+    let ffmpeg_path = kv::config::get()?.ffmpeg_path;
+    let output = std::process::Command::new(ffmpeg_path)
         .args(&ffmpeg_command)
         .output()?;
     let stdout = String::from_utf8_lossy(&output.stdout);
