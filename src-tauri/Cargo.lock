@@ -7083,9 +7083,9 @@ dependencies = [
 
 [[package]]
 name = "zerovec-derive"
-version = "0.9.6"
+version = "0.9.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a4a1638a1934450809c2266a70362bfc96cd90550c073f5b8a55014d1010157"
+checksum = "fa94b6a91d81a9d96473412885b87d8fb677accc447cae54571f93313aebf109"
 dependencies = [
  "proc-macro2",
  "quote",
